@@ -1,4 +1,5 @@
 import { createBrowserRouter, RouterProvider } from "react-router";
+import Root from "./Root";
 import LandingPage from "./pages/LandingPage";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -7,7 +8,13 @@ import { AuthContextProvider } from "../contexts/AuthContext";
 const appRouter = createBrowserRouter([
   {
     path: "/",
-    element: <LandingPage />,
+    element: <Root />,
+    children: [
+      {
+        path: "/",
+        element: <LandingPage />,
+      },
+    ]
   },
   {
     path: "/login",

@@ -8,12 +8,61 @@ type SignupState = {
     success?: boolean;
 };
 
+type ValidationErrors = {
+    fullname?: string;
+    email?: string;
+    password?: string;
+    role?: string;
+};
+
 const Signup = () => {
     const [showPassword, setShowPassword] = useState(false);
+    const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
     const { signup } = useAuth();
     const navigate = useNavigate();
 
+    const validateForm = (formData: FormData): boolean => {
+        const errors: ValidationErrors = {};
+        const fullname = formData.get('fullname') as string;
+        const email = formData.get('email') as string;
+        const password = formData.get('password') as string;
+        const role = formData.get('role') as string;
+
+        if (!fullname || fullname.trim() === '') {
+            errors.fullname = 'Please enter your full name';
+        } else if (fullname.trim().length < 2) {
+            errors.fullname = 'Name must be at least 2 characters';
+        }
+
+        if (!email || email.trim() === '') {
+            errors.email = 'Please enter your email';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            errors.email = 'Please enter a valid email address';
+        }
+
+        if (!password || password.trim() === '') {
+            errors.password = 'Please enter your password';
+        } else if (password.length < 6) {
+            errors.password = 'Password must be at least 6 characters';
+        }
+
+        if (!role) {
+            errors.role = 'Please select your role';
+        }
+
+        setValidationErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
     const signupAction = async (_prevState: SignupState, formData: FormData): Promise<SignupState> => {
+        // Clear previous validation errors
+        setValidationErrors({});
+
+        // Validate form
+        if (!validateForm(formData)) {
+            return { error: 'Please fix the errors below' };
+        }
+
         const result = await signup(
             formData.get('fullname') as string,
             formData.get('email') as string,
@@ -66,12 +115,14 @@ const Signup = () => {
                                     <input
                                         type="text"
                                         name="fullname"
-                                        required
                                         disabled={isPending}
-                                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition disabled:bg-gray-50 disabled:text-gray-500"
+                                        className={`w-full pl-10 pr-4 py-3 border ${validationErrors.fullname ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'} rounded-lg focus:ring-2 focus:border-transparent outline-none transition disabled:bg-gray-50 disabled:text-gray-500`}
                                         placeholder="John Doe"
                                     />
                                 </div>
+                                {validationErrors.fullname && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.fullname}</p>
+                                )}
                             </div>
 
                             {/* Email */}
@@ -84,12 +135,14 @@ const Signup = () => {
                                     <input
                                         type="email"
                                         name="email"
-                                        required
                                         disabled={isPending}
-                                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition disabled:bg-gray-50 disabled:text-gray-500"
+                                        className={`w-full pl-10 pr-4 py-3 border ${validationErrors.email ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'} rounded-lg focus:ring-2 focus:border-transparent outline-none transition disabled:bg-gray-50 disabled:text-gray-500`}
                                         placeholder="you@example.com"
                                     />
                                 </div>
+                                {validationErrors.email && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>
+                                )}
                             </div>
 
                             {/* Password */}
@@ -102,9 +155,8 @@ const Signup = () => {
                                     <input
                                         type={showPassword ? 'text' : 'password'}
                                         name="password"
-                                        required
                                         disabled={isPending}
-                                        className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition disabled:bg-gray-50 disabled:text-gray-500"
+                                        className={`w-full pl-10 pr-12 py-3 border ${validationErrors.password ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'} rounded-lg focus:ring-2 focus:border-transparent outline-none transition disabled:bg-gray-50 disabled:text-gray-500`}
                                         placeholder="••••••••"
                                     />
                                     <button
@@ -116,6 +168,9 @@ const Signup = () => {
                                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                     </button>
                                 </div>
+                                {validationErrors.password && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.password}</p>
+                                )}
                             </div>
 
                             {/* Role Selection */}
@@ -133,7 +188,7 @@ const Signup = () => {
                                             disabled={isPending}
                                             className="peer sr-only"
                                         />
-                                        <div className="p-3 rounded-lg border-2 border-gray-200 peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:text-blue-700 hover:border-gray-300 transition-all peer-disabled:opacity-50">
+                                        <div className={`p-3 rounded-lg border-2 ${validationErrors.role ? 'border-red-300' : 'border-gray-200'} peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:text-blue-700 hover:border-gray-300 transition-all peer-disabled:opacity-50`}>
                                             <User className="w-5 h-5 mx-auto mb-1" />
                                             <span className="text-sm font-medium block text-center">Job Seeker</span>
                                         </div>
@@ -146,12 +201,15 @@ const Signup = () => {
                                             disabled={isPending}
                                             className="peer sr-only"
                                         />
-                                        <div className="p-3 rounded-lg border-2 border-gray-200 peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:text-blue-700 hover:border-gray-300 transition-all peer-disabled:opacity-50">
+                                        <div className={`p-3 rounded-lg border-2 ${validationErrors.role ? 'border-red-300' : 'border-gray-200'} peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:text-blue-700 hover:border-gray-300 transition-all peer-disabled:opacity-50`}>
                                             <Briefcase className="w-5 h-5 mx-auto mb-1" />
                                             <span className="text-sm font-medium block text-center">Recruiter</span>
                                         </div>
                                     </label>
                                 </div>
+                                {validationErrors.role && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.role}</p>
+                                )}
                             </div>
 
                             {/* Submit Button */}

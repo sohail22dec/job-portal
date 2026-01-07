@@ -1,12 +1,9 @@
 import { Link } from 'react-router';
 import { ArrowRight, Search, Briefcase, Star } from 'lucide-react';
-import Navbar from '../components/shared/Navbar';
 
 const LandingPage = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-            <Navbar />
-
             {/* Hero Section */}
             <section className="relative pt-20 pb-32 px-4 sm:px-6 lg:px-8 overflow-hidden">
                 {/* Background decorations */}

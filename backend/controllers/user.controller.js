@@ -57,11 +57,11 @@ export const register = asyncHandler(async (req, res) => {
 });
 
 export const login = asyncHandler(async (req, res) => {
-    const { email, password, role } = req.body;
+    const { email, password } = req.body;
 
-    if (!email || !password || !role) {
+    if (!email || !password) {
         res.status(400);
-        throw new Error("Please provide email, password and role");
+        throw new Error("Please provide email and password");
     }
 
     const user = await User.findOne({ email });
@@ -74,12 +74,6 @@ export const login = asyncHandler(async (req, res) => {
     if (!isPasswordMatch) {
         res.status(401);
         throw new Error("Invalid email or password");
-    }
-
-    // check role is correct or not
-    if (role !== user.role) {
-        res.status(403);
-        throw new Error("Account doesn't exist with current role");
     }
 
     const tokenData = {
@@ -95,7 +89,7 @@ export const login = asyncHandler(async (req, res) => {
         fullname: user.fullname,
         email: user.email,
         phoneNumber: user.phoneNumber,
-        role: user.role,
+        role: user.role,  // Role comes from database!
         profile: user.profile
     };
 

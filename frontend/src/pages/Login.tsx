@@ -1,6 +1,6 @@
 import { useActionState, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { Briefcase, Mail, Lock, User, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Briefcase, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
 type LoginState = {
@@ -8,16 +8,50 @@ type LoginState = {
     success?: boolean;
 };
 
+type ValidationErrors = {
+    email?: string;
+    password?: string;
+};
+
 const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
+    const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
     const { login } = useAuth();
     const navigate = useNavigate();
 
+    const validateForm = (formData: FormData): boolean => {
+        const errors: ValidationErrors = {};
+        const email = formData.get('email') as string;
+        const password = formData.get('password') as string;
+
+        if (!email || email.trim() === '') {
+            errors.email = 'Please enter your email';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            errors.email = 'Please enter a valid email address';
+        }
+
+        if (!password || password.trim() === '') {
+            errors.password = 'Please enter your password';
+        } else if (password.length < 6) {
+            errors.password = 'Password must be at least 6 characters';
+        }
+
+        setValidationErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
     const loginAction = async (_prevState: LoginState, formData: FormData): Promise<LoginState> => {
+        // Clear previous validation errors
+        setValidationErrors({});
+
+        // Validate form
+        if (!validateForm(formData)) {
+            return { error: 'Please fix the errors below' };
+        }
+
         const result = await login(
             formData.get('email') as string,
-            formData.get('password') as string,
-            formData.get('role') as string
+            formData.get('password') as string
         );
 
         if (result.success) {
@@ -65,12 +99,14 @@ const Login = () => {
                                     <input
                                         type="email"
                                         name="email"
-                                        required
                                         disabled={isPending}
-                                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition disabled:bg-gray-50 disabled:text-gray-500"
+                                        className={`w-full pl-10 pr-4 py-3 border ${validationErrors.email ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'} rounded-lg focus:ring-2 focus:border-transparent outline-none transition disabled:bg-gray-50 disabled:text-gray-500`}
                                         placeholder="you@example.com"
                                     />
                                 </div>
+                                {validationErrors.email && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>
+                                )}
                             </div>
 
                             {/* Password */}
@@ -83,9 +119,8 @@ const Login = () => {
                                     <input
                                         type={showPassword ? 'text' : 'password'}
                                         name="password"
-                                        required
                                         disabled={isPending}
-                                        className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition disabled:bg-gray-50 disabled:text-gray-500"
+                                        className={`w-full pl-10 pr-12 py-3 border ${validationErrors.password ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'} rounded-lg focus:ring-2 focus:border-transparent outline-none transition disabled:bg-gray-50 disabled:text-gray-500`}
                                         placeholder="••••••••"
                                     />
                                     <button
@@ -97,42 +132,9 @@ const Login = () => {
                                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                     </button>
                                 </div>
-                            </div>
-
-                            {/* Role Selection */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Login as
-                                </label>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <label className="cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="role"
-                                            value="job_seeker"
-                                            defaultChecked
-                                            disabled={isPending}
-                                            className="peer sr-only"
-                                        />
-                                        <div className="p-3 rounded-lg border-2 border-gray-200 peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:text-blue-700 hover:border-gray-300 transition-all peer-disabled:opacity-50">
-                                            <User className="w-5 h-5 mx-auto mb-1" />
-                                            <span className="text-sm font-medium block text-center">Job Seeker</span>
-                                        </div>
-                                    </label>
-                                    <label className="cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="role"
-                                            value="recruiter"
-                                            disabled={isPending}
-                                            className="peer sr-only"
-                                        />
-                                        <div className="p-3 rounded-lg border-2 border-gray-200 peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:text-blue-700 hover:border-gray-300 transition-all peer-disabled:opacity-50">
-                                            <Briefcase className="w-5 h-5 mx-auto mb-1" />
-                                            <span className="text-sm font-medium block text-center">Recruiter</span>
-                                        </div>
-                                    </label>
-                                </div>
+                                {validationErrors.password && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.password}</p>
+                                )}
                             </div>
 
                             {/* Submit Button */}

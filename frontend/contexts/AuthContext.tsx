@@ -12,7 +12,7 @@ type User = {
 type AuthContextType = {
     user: User | null;
     loading: boolean;
-    login: (email: string, password: string, role: string) => Promise<{ success: boolean; error?: string }>;
+    login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
     signup: (fullname: string, email: string, password: string, role: string) => Promise<{ success: boolean; error?: string }>;
     logout: () => Promise<void>;
     refetchUser: () => Promise<void>;
@@ -55,12 +55,12 @@ export const AuthContextProvider = ({ children }: AuthContextProviderProps) => {
     };
 
     // Login function
-    const login = async (email: string, password: string, role: string) => {
+    const login = async (email: string, password: string) => {
         try {
             const response = await fetch(`${API_URL}/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password, role }),
+                body: JSON.stringify({ email, password }),
                 credentials: 'include',
             });
 
