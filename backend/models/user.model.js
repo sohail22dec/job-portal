@@ -26,12 +26,17 @@ const userSchema = new mongoose.Schema({
     profile: {
         bio: { type: String },
         skills: [{ type: String }],
-        resume: { type: String }, // URL to resume file
+        resume: { type: String },  // URL to resume file (for job seekers)
         resumeOriginalName: { type: String },
-        company: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },
         profilePhoto: {
             type: String,
             default: ""
+        },
+        company: {  // For recruiters
+            name: { type: String },
+            description: { type: String },
+            website: { type: String },
+            logo: { type: String }  // URL to company logo
         }
     },
 }, { timestamps: true });
