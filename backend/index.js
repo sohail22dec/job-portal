@@ -5,6 +5,7 @@ import "dotenv/config";
 import connectDB from "./utils/db.js";
 import userRoute from "./routes/user.route.js";
 import jobRoute from "./routes/job.route.js";
+import applicationRoute from "./routes/application.route.js";
 import errorHandler from "./middleware/errorHandler.js";
 
 const app = express();
@@ -25,6 +26,7 @@ const PORT = process.env.PORT || 3000;
 // api's
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/job", jobRoute);
+app.use("/api/v1/application", applicationRoute);
 
 // Error handler middleware (must be after routes)
 app.use(errorHandler);

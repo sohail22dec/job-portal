@@ -208,12 +208,21 @@ const RecruiterDashboard = () => {
                                     <span className="text-sm text-gray-500">
                                         Posted {new Date(job.createdAt).toLocaleDateString()}
                                     </span>
-                                    <Link
-                                        to={`/job/${job._id}`}
-                                        className="text-blue-600 hover:text-blue-700 font-medium text-sm"
-                                    >
-                                        View Details →
-                                    </Link>
+                                    <div className="flex gap-3">
+                                        <Link
+                                            to={`/job/${job._id}/applicants`}
+                                            className="text-indigo-600 hover:text-indigo-700 font-medium text-sm flex items-center gap-1"
+                                        >
+                                            <Users className="w-4 h-4" />
+                                            View Applicants ({job.applications?.length || 0})
+                                        </Link>
+                                        <Link
+                                            to={`/job/${job._id}`}
+                                            className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                                        >
+                                            View Details →
+                                        </Link>
+                                    </div>
                                 </div>
                             </div>
                         ))}

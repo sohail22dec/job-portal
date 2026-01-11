@@ -1,7 +1,18 @@
-import { Link } from 'react-router';
+import { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router';
 import { ArrowRight, Search, Briefcase, Star } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 
 const LandingPage = () => {
+    const { user } = useAuth();
+    const navigate = useNavigate();
+
+    // Redirect to dashboard if user is already logged in
+    useEffect(() => {
+        if (user) {
+            navigate('/dashboard');
+        }
+    }, [user, navigate]);
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
             {/* Hero Section */}

@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { ArrowLeft, MapPin, IndianRupee, Briefcase, Users, Building2, Loader2 } from 'lucide-react';
+import { ArrowLeft, MapPin, IndianRupee, Briefcase, Users, Building2, Loader2, CheckCircle } from 'lucide-react';
 import { jobApi } from '../api/jobApi';
+import { useAuth } from '../hooks/useAuth';
+import ApplyModal from '../components/common/ApplyModal';
 
 type Job = {
     _id: string;
@@ -34,9 +36,12 @@ type Job = {
 const JobDetails = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [job, setJob] = useState<Job | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [showApplyModal, setShowApplyModal] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
 
     useEffect(() => {
         const fetchJob = async () => {
@@ -59,6 +64,29 @@ const JobDetails = () => {
 
         fetchJob();
     }, [id]);
+
+    const handleApplyClick = () => {
+        if (!user) {
+            navigate('/login');
+            return;
+        }
+        if (user.role === 'recruiter') {
+            alert('Recruiters cannot apply for jobs');
+            return;
+        }
+        setShowApplyModal(true);
+    };
+
+    const handleApplicationSuccess = () => {
+        setSuccessMessage('Application submitted successfully!');
+        setTimeout(() => setSuccessMessage(''), 5000);
+        // Refresh job to update applicant count
+        if (id) {
+            jobApi.getJobById(id).then(data => {
+                if (data.success) setJob(data.job);
+            });
+        }
+    };
 
     if (loading) {
         return (
@@ -150,6 +178,26 @@ const JobDetails = () => {
                     </div>
                 </div>
 
+                {/* Apply Button */}
+                {job.status === 'open' && user?.role !== 'recruiter' && (
+                    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 mb-6">
+                        <button
+                            onClick={handleApplyClick}
+                            className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-lg rounded-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
+                        >
+                            Apply for this Position
+                        </button>
+                    </div>
+                )}
+
+                {/* Success Message */}
+                {successMessage && (
+                    <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 z-50">
+                        <CheckCircle className="w-6 h-6" />
+                        <span className="font-semibold">{successMessage}</span>
+                    </div>
+                )}
+
                 {/* Job Details */}
                 <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-8 mb-6">
                     <h2 className="text-xl font-bold text-gray-900 mb-4">Job Description</h2>
@@ -221,6 +269,16 @@ const JobDetails = () => {
                             </a>
                         )}
                     </div>
+                )}
+
+                {/* Apply Modal */}
+                {showApplyModal && job && (
+                    <ApplyModal
+                        jobId={job._id}
+                        jobTitle={job.title}
+                        onClose={() => setShowApplyModal(false)}
+                        onSuccess={handleApplicationSuccess}
+                    />
                 )}
             </div>
         </div>
