@@ -10,7 +10,6 @@ import errorHandler from "./middleware/errorHandler.js";
 
 const app = express();
 
-// middleware
 app.use(express.json());
 app.use(cookieParser());
 const corsOptions = {
@@ -20,15 +19,16 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// Serve static files from uploads directory
+app.use('/uploads', express.static('uploads'));
+
 const PORT = process.env.PORT || 3000;
 
 
-// api's
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/job", jobRoute);
 app.use("/api/v1/application", applicationRoute);
 
-// Error handler middleware (must be after routes)
 app.use(errorHandler);
 
 app.listen(PORT, () => {

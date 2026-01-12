@@ -1,16 +1,20 @@
 import { createBrowserRouter, RouterProvider } from "react-router";
 import Root from "./Root";
-import LandingPage from "./pages/LandingPage";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import Dashboard from "./pages/Dashboard";
-import RecruiterDashboard from "./pages/RecruiterDashboard";
-import JobSeekerDashboard from "./pages/JobSeekerDashboard";
-import Jobs from "./pages/Jobs";
-import JobDetails from "./pages/JobDetails";
-import Applicants from "./pages/Applicants";
-import ErrorPage from "./pages/ErrorPage";
+import Landing from "./pages/common/Landing";
+import Login from "./pages/auth/Login";
+import Signup from "./pages/auth/Signup";
+import Dashboard from "./pages/common/Dashboard";
+import RecruiterDashboard from "./pages/recruiter/Dashboard";
+import JobSeekerDashboard from "./pages/job-seeker/Dashboard";
+import JobsList from "./pages/jobs/JobsList";
+import JobDetails from "./pages/jobs/JobDetails";
+import Applicants from "./pages/recruiter/Applicants";
+import PostJob from "./pages/recruiter/PostJob";
+import CompanyProfile from "./pages/recruiter/CompanyProfile";
+import ErrorPage from "./pages/common/ErrorPage";
 import { AuthContextProvider } from "../contexts/AuthContext";
+import { ToastProvider } from "../contexts/ToastContext";
+import Toast from "./components/Toast";
 
 const appRouter = createBrowserRouter([
   {
@@ -20,7 +24,7 @@ const appRouter = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: <LandingPage />,
+        element: <Landing />,
       },
       {
         path: "/dashboard",
@@ -36,7 +40,7 @@ const appRouter = createBrowserRouter([
       },
       {
         path: "/jobs",
-        element: <Jobs />,
+        element: <JobsList />,
       },
       {
         path: "/job/:id",
@@ -45,6 +49,18 @@ const appRouter = createBrowserRouter([
       {
         path: "/job/:jobId/applicants",
         element: <Applicants />,
+      },
+      {
+        path: "/post-job",
+        element: <PostJob />,
+      },
+      {
+        path: "/edit-job/:jobId",
+        element: <PostJob />,
+      },
+      {
+        path: "/company-profile",
+        element: <CompanyProfile />,
       }
     ]
   },
@@ -61,7 +77,10 @@ const appRouter = createBrowserRouter([
 function App() {
   return (
     <AuthContextProvider>
-      <RouterProvider router={appRouter} />
+      <ToastProvider>
+        <Toast />
+        <RouterProvider router={appRouter} />
+      </ToastProvider>
     </AuthContextProvider>
   );
 }

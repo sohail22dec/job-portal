@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Loader2, Mail, Phone, FileText, CheckCircle, XCircle, Eye } from 'lucide-react';
 import applicationApi from '../../api/applicationApi';
+import { useToast } from '../../hooks/useToast';
 
 type Application = {
     _id: string;
@@ -27,6 +28,7 @@ const ApplicantsModal = ({ jobId, jobTitle, onClose }: ApplicantsModalProps) => 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [updatingId, setUpdatingId] = useState<string | null>(null);
+    const { showToast } = useToast();
 
     useEffect(() => {
         fetchApplicants();
@@ -61,7 +63,7 @@ const ApplicantsModal = ({ jobId, jobTitle, onClose }: ApplicantsModalProps) => 
                 );
             }
         } catch (err: any) {
-            alert(err.message || 'Failed to update status');
+            showToast(err.message || 'Failed to update status', 'error');
         } finally {
             setUpdatingId(null);
         }

@@ -1,6 +1,7 @@
 import express from "express";
-import { login, logout, register, updateProfile, getMe } from "../controllers/user.controller.js";
+import { login, logout, register, updateProfile, updateCompanyProfile, getMe } from "../controllers/user.controller.js";
 import isAuthenticated from "../middleware/isAuthenticated.js";
+import { upload } from "../middleware/upload.middleware.js";
 
 const router = express.Router();
 
@@ -11,6 +12,7 @@ router.route("/login").post(login);
 // Protected routes (authentication required)
 router.route("/logout").get(isAuthenticated, logout);
 router.route("/profile/update").put(isAuthenticated, updateProfile);
+router.route("/update-company-profile").put(isAuthenticated, upload.single('logo'), updateCompanyProfile);
 router.route("/me").get(isAuthenticated, getMe);
 
 export default router;

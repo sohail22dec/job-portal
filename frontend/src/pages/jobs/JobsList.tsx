@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
-import { Briefcase, MapPin, IndianRupee, Clock, Loader2, Search, X } from 'lucide-react';
-import { jobApi } from '../api/jobApi';
+import { MapPin, IndianRupee, Clock, Loader2, Search, X, Briefcase } from 'lucide-react';
+import { jobApi } from '../../api/jobApi';
 
 type Job = {
     _id: string;
@@ -51,106 +51,101 @@ const Jobs = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-8">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-gray-50 py-8">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900">Browse Jobs</h1>
-                    <p className="text-gray-600 mt-2">Find your next opportunity from {jobs.length} open positions</p>
+                <div className="mb-6">
+                    <h1 className="text-2xl font-semibold text-gray-900">Browse Jobs</h1>
+                    <p className="text-sm text-gray-600 mt-1">{jobs.length} open positions</p>
                 </div>
 
                 {/* Search Bar */}
-                <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6 mb-6">
-                    <div className="flex gap-3">
+                <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+                    <div className="flex gap-2">
                         <div className="relative flex-1">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                             <input
                                 type="text"
                                 placeholder="Search by job title or location..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                                className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none text-sm"
                             />
                             {searchQuery && (
                                 <button
                                     onClick={handleClearSearch}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                                 >
-                                    <X className="w-5 h-5" />
+                                    <X className="w-4 h-4" />
                                 </button>
                             )}
                         </div>
                         <button
                             onClick={handleSearch}
-                            className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
+                            className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-800 transition"
                         >
-                            <Search className="w-5 h-5" />
                             Search
                         </button>
                     </div>
                 </div>
 
-                {/* Jobs Grid */}
+                {/* Jobs List */}
                 {loading ? (
                     <div className="flex justify-center items-center py-12">
-                        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
                     </div>
                 ) : jobs.length === 0 ? (
-                    <div className="bg-white rounded-xl shadow-md p-12 text-center border border-gray-100">
-                        <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
+                        <Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-1">
                             {searchQuery ? 'No jobs found' : 'No open jobs available'}
                         </h3>
-                        <p className="text-gray-600">
+                        <p className="text-sm text-gray-500">
                             {searchQuery ? 'Try a different search term' : 'Check back later for new opportunities'}
                         </p>
                     </div>
                 ) : (
-                    <div className="grid gap-6">
+                    <div className="space-y-3">
                         {jobs.map((job) => (
-                            <div key={job._id} className="bg-white rounded-xl shadow-md p-6 border border-gray-100 hover:shadow-lg transition-all hover:-translate-y-1">
-                                <div className="flex items-start justify-between mb-4">
+                            <div key={job._id} className="bg-white border border-gray-200 rounded-lg p-5 hover:border-gray-300 transition">
+                                <div className="flex items-start justify-between mb-3">
                                     <div className="flex-1">
                                         <Link
                                             to={`/job/${job._id}`}
-                                            className="text-2xl font-bold text-gray-900 hover:text-blue-600 transition"
+                                            className="text-lg font-semibold text-gray-900 hover:text-gray-700 transition"
                                         >
                                             {job.title}
                                         </Link>
-                                        <p className="text-gray-600 mt-2 line-clamp-2">{job.description}</p>
+                                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">{job.description}</p>
                                     </div>
-                                    <span className="ml-4 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                                        Open
-                                    </span>
                                 </div>
 
-                                <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-4">
+                                <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-3">
                                     <div className="flex items-center gap-1">
-                                        <MapPin className="w-4 h-4" />
+                                        <MapPin className="w-3.5 h-3.5" />
                                         <span>{job.location}</span>
                                     </div>
                                     <div className="flex items-center gap-1">
-                                        <IndianRupee className="w-4 h-4" />
+                                        <IndianRupee className="w-3.5 h-3.5" />
                                         <span>₹{job.salary.toLocaleString()}/year</span>
                                     </div>
                                     <div className="flex items-center gap-1">
-                                        <Briefcase className="w-4 h-4" />
+                                        <Clock className="w-3.5 h-3.5" />
                                         <span>{job.jobType}</span>
                                     </div>
                                     <div className="flex items-center gap-1">
-                                        <Clock className="w-4 h-4" />
                                         <span>{job.experience} years exp</span>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                                    <span className="text-sm text-gray-500">
+                                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                                    <span className="text-xs text-gray-500">
                                         Posted {new Date(job.createdAt).toLocaleDateString()}
                                     </span>
                                     <Link
                                         to={`/job/${job._id}`}
-                                        className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
+                                        className="px-4 py-1.5 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-800 transition"
                                     >
                                         View Details
                                     </Link>

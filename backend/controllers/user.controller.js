@@ -4,11 +4,23 @@ import jwt from "jsonwebtoken";
 import asyncHandler from "express-async-handler";
 
 export const register = asyncHandler(async (req, res) => {
-    const { fullname, email, password, role } = req.body;
+    const { fullname, email, password, role, phoneNumber, profile } = req.body;
 
+    // Basic validation
     if (!fullname || !email || !password || !role) {
         res.status(400);
-        throw new Error("Please provide fullname, email and password");
+        throw new Error("Please provide fullname, email, password, and role");
+    }
+
+    // Role-specific validation
+    if (role === 'job_seeker' && !phoneNumber) {
+        res.status(400);
+        throw new Error("Phone number is required for job seekers");
+    }
+
+    if (role === 'recruiter' && (!profile || !profile.company || !profile.company.name)) {
+        res.status(400);
+        throw new Error("Company name is required for recruiters");
     }
 
     const existingUser = await User.findOne({ email });
@@ -19,12 +31,32 @@ export const register = asyncHandler(async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = await User.create({
+    // Build user data object
+    const userData = {
         fullname,
         email,
         password: hashedPassword,
-        role,
-    });
+        role
+    };
+
+    // Add phoneNumber if provided (for job seekers)
+    if (phoneNumber) {
+        userData.phoneNumber = phoneNumber;
+    }
+
+    // Add profile/company info if provided (for recruiters)
+    if (profile && profile.company && profile.company.name) {
+        userData.profile = {
+            company: {
+                name: profile.company.name,
+                description: profile.company.description || '',
+                website: profile.company.website || '',
+                logo: profile.company.logo || ''
+            }
+        };
+    }
+
+    const newUser = await User.create(userData);
 
     // Generate JWT token for auto-login after registration
     const tokenData = {
@@ -38,6 +70,7 @@ export const register = asyncHandler(async (req, res) => {
         _id: newUser._id,
         fullname: newUser.fullname,
         email: newUser.email,
+        phoneNumber: newUser.phoneNumber,
         role: newUser.role,
         profile: newUser.profile
     };
@@ -149,6 +182,48 @@ export const updateProfile = asyncHandler(async (req, res) => {
     return res.status(200).json({
         message: "Profile updated successfully.",
         user,
+        success: true
+    });
+});
+
+// Update company profile with logo upload
+export const updateCompanyProfile = asyncHandler(async (req, res) => {
+    const { description, website } = req.body;
+    const userId = req.userId;
+
+    let user = await User.findById(userId);
+
+    if (!user) {
+        res.status(404);
+        throw new Error("User not found");
+    }
+
+    if (user.role !== 'recruiter') {
+        res.status(403);
+        throw new Error("Only recruiters can update company profile");
+    }
+
+    // Initialize profile.company if it doesn't exist
+    if (!user.profile) {
+        user.profile = { company: {} };
+    }
+    if (!user.profile.company) {
+        user.profile.company = {};
+    }
+
+    // Update company info
+    if (description) user.profile.company.description = description;
+    if (website) user.profile.company.website = website;
+
+    // Handle logo upload (Cloudinary)
+    if (req.file) {
+        user.profile.company.logo = req.file.path; // Cloudinary URL
+    }
+
+    await user.save();
+
+    return res.status(200).json({
+        message: "Company profile updated successfully.",
         success: true
     });
 });

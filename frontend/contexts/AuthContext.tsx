@@ -13,7 +13,7 @@ type AuthContextType = {
     user: User | null;
     loading: boolean;
     login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-    signup: (fullname: string, email: string, password: string, role: string) => Promise<{ success: boolean; error?: string }>;
+    signup: (fullname: string, email: string, password: string, role: string, phoneNumber?: string, companyName?: string) => Promise<{ success: boolean; error?: string }>;
     logout: () => Promise<void>;
     refetchUser: () => Promise<void>;
 };
@@ -78,12 +78,33 @@ export const AuthContextProvider = ({ children }: AuthContextProviderProps) => {
     };
 
     // Signup function
-    const signup = async (fullname: string, email: string, password: string, role: string) => {
+    const signup = async (
+        fullname: string,
+        email: string,
+        password: string,
+        role: string,
+        phoneNumber?: string,
+        companyName?: string
+    ) => {
         try {
+            const body: any = { fullname, email, password, role };
+
+            if (phoneNumber) {
+                body.phoneNumber = phoneNumber;
+            }
+
+            if (role === 'recruiter' && companyName) {
+                body.profile = {
+                    company: {
+                        name: companyName
+                    }
+                };
+            }
+
             const response = await fetch(`${API_URL}/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fullname, email, password, role }),
+                body: JSON.stringify(body),
                 credentials: 'include',
             });
 
