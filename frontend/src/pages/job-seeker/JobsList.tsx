@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router';
-import { MapPin, IndianRupee, Clock, Loader2, Search, X, Briefcase } from 'lucide-react';
+import { Loader2, Search, X, Briefcase } from 'lucide-react';
 import { jobApi } from '../../api/jobApi';
+import JobCard from '../../components/JobCard';
 
 type Job = {
     _id: string;
@@ -52,7 +52,7 @@ const Jobs = () => {
 
     return (
         <div className="min-h-screen bg-gray-50 py-8">
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto px-6">
                 {/* Header */}
                 <div className="mb-6">
                     <h1 className="text-2xl font-semibold text-gray-900">Browse Jobs</h1>
@@ -108,49 +108,11 @@ const Jobs = () => {
                 ) : (
                     <div className="space-y-3">
                         {jobs.map((job) => (
-                            <div key={job._id} className="bg-white border border-gray-200 rounded-lg p-5 hover:border-gray-300 transition">
-                                <div className="flex items-start justify-between mb-3">
-                                    <div className="flex-1">
-                                        <Link
-                                            to={`/job/${job._id}`}
-                                            className="text-lg font-semibold text-gray-900 hover:text-gray-700 transition"
-                                        >
-                                            {job.title}
-                                        </Link>
-                                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">{job.description}</p>
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-3">
-                                    <div className="flex items-center gap-1">
-                                        <MapPin className="w-3.5 h-3.5" />
-                                        <span>{job.location}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <IndianRupee className="w-3.5 h-3.5" />
-                                        <span>₹{job.salary.toLocaleString()}/year</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <Clock className="w-3.5 h-3.5" />
-                                        <span>{job.jobType}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <span>{job.experience} years exp</span>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                                    <span className="text-xs text-gray-500">
-                                        Posted {new Date(job.createdAt).toLocaleDateString()}
-                                    </span>
-                                    <Link
-                                        to={`/job/${job._id}`}
-                                        className="px-4 py-1.5 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-800 transition"
-                                    >
-                                        View Details
-                                    </Link>
-                                </div>
-                            </div>
+                            <JobCard
+                                key={job._id}
+                                job={job}
+                                variant="seeker"
+                            />
                         ))}
                     </div>
                 )}

@@ -39,6 +39,10 @@ const userSchema = new mongoose.Schema({
             logo: { type: String }  // URL to company logo
         }
     },
+    savedJobs: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Job'
+    }],
 }, { timestamps: true });
 
 export const User = mongoose.model('User', userSchema);

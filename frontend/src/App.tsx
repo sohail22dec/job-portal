@@ -6,8 +6,10 @@ import Signup from "./pages/auth/Signup";
 import Dashboard from "./pages/common/Dashboard";
 import RecruiterDashboard from "./pages/recruiter/Dashboard";
 import JobSeekerDashboard from "./pages/job-seeker/Dashboard";
-import JobsList from "./pages/jobs/JobsList";
+import JobsList from "./pages/job-seeker/JobsList";
 import JobDetails from "./pages/jobs/JobDetails";
+import SavedJobs from "./pages/job-seeker/SavedJobs";
+import ApplyJob from "./pages/job-seeker/ApplyJob";
 import Applicants from "./pages/recruiter/Applicants";
 import PostJob from "./pages/recruiter/PostJob";
 import CompanyProfile from "./pages/recruiter/CompanyProfile";
@@ -47,6 +49,10 @@ const appRouter = createBrowserRouter([
         element: <JobDetails />,
       },
       {
+        path: "/job/:jobId/apply",
+        element: <ApplyJob />,
+      },
+      {
         path: "/job/:jobId/applicants",
         element: <Applicants />,
       },
@@ -57,6 +63,10 @@ const appRouter = createBrowserRouter([
       {
         path: "/edit-job/:jobId",
         element: <PostJob />,
+      },
+      {
+        path: "/saved-jobs",
+        element: <SavedJobs />,
       },
       {
         path: "/company-profile",

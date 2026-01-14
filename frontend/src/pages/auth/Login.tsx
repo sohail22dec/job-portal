@@ -2,6 +2,7 @@ import { useActionState, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { useToast } from '../../hooks/useToast';
 
 type LoginState = {
     error?: string;
@@ -17,6 +18,7 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
     const { login } = useAuth();
+    const { showToast } = useToast();
     const navigate = useNavigate();
 
     const validateForm = (formData: FormData): boolean => {
@@ -57,10 +59,13 @@ const Login = () => {
             return { success: true };
         }
 
+        if (result.error) {
+            showToast(result.error, 'error');
+        }
         return { error: result.error || 'Login failed' };
     };
 
-    const [state, action, isPending] = useActionState(loginAction, { success: false });
+    const [, action, isPending] = useActionState(loginAction, { success: false });
 
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
@@ -73,12 +78,6 @@ const Login = () => {
 
                 {/* Form */}
                 <div className="bg-white border border-gray-200 rounded-lg p-8">
-                    {state.error && (
-                        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
-                            {state.error}
-                        </div>
-                    )}
-
                     <form action={action}>
                         {/* Email */}
                         <div className="mb-4">

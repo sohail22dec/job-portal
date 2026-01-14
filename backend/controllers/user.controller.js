@@ -135,6 +135,7 @@ export const login = asyncHandler(async (req, res) => {
         })
         .json({
             user: userData,
+            success: true,
         });
 });
 

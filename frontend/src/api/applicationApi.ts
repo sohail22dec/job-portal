@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:8000/api/v1';
+const API_BASE = 'http://localhost:8000/api/v1/application';
 
 // Helper to handle API responses
 const handleResponse = async (response: Response) => {
@@ -13,7 +13,7 @@ const handleResponse = async (response: Response) => {
 
 // Apply for a job
 export const applyForJob = async (jobId: string, applicationData: { coverLetter?: string; resume?: string }) => {
-    const response = await fetch(`${API_BASE}/application/apply/${jobId}`, {
+    const response = await fetch(`${API_BASE}/apply/${jobId}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -26,7 +26,7 @@ export const applyForJob = async (jobId: string, applicationData: { coverLetter?
 
 // Get my applications
 export const getMyApplications = async () => {
-    const response = await fetch(`${API_BASE}/application/my-applications`, {
+    const response = await fetch(`${API_BASE}/my-applications`, {
         method: 'GET',
         credentials: 'include',
     });
@@ -35,7 +35,7 @@ export const getMyApplications = async () => {
 
 // Get application by ID
 export const getApplicationById = async (id: string) => {
-    const response = await fetch(`${API_BASE}/application/${id}`, {
+    const response = await fetch(`${API_BASE}/${id}`, {
         method: 'GET',
         credentials: 'include',
     });
@@ -44,7 +44,7 @@ export const getApplicationById = async (id: string) => {
 
 // Get job applicants (recruiter only)
 export const getJobApplicants = async (jobId: string) => {
-    const response = await fetch(`${API_BASE}/application/job/${jobId}/applicants`, {
+    const response = await fetch(`${API_BASE}/job/${jobId}/applicants`, {
         method: 'GET',
         credentials: 'include',
     });
@@ -53,7 +53,7 @@ export const getJobApplicants = async (jobId: string) => {
 
 // Update application status (recruiter only)
 export const updateApplicationStatus = async (id: string, status: string) => {
-    const response = await fetch(`${API_BASE}/application/${id}/status`, {
+    const response = await fetch(`${API_BASE}/${id}/status`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',

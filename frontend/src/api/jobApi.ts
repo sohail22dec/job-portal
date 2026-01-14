@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:8000/api/v1';
+const API_BASE = 'http://localhost:8000/api/v1/job';
 
 // Helper to handle API responses
 const handleResponse = async (response: Response) => {
@@ -14,7 +14,7 @@ const handleResponse = async (response: Response) => {
 export const jobApi = {
     // Get all jobs posted by the recruiter
     getRecruiterJobs: async () => {
-        const response = await fetch(`${API_BASE}/job/recruiter/jobs`, {
+        const response = await fetch(`${API_BASE}/recruiter/jobs`, {
             credentials: 'include'
         });
         return handleResponse(response);
@@ -23,8 +23,8 @@ export const jobApi = {
     // Get all jobs (public)
     getAllJobs: async (keyword = '') => {
         const url = keyword
-            ? `${API_BASE}/job/all?keyword=${encodeURIComponent(keyword)}`
-            : `${API_BASE}/job/all`;
+            ? `${API_BASE}/all?keyword=${encodeURIComponent(keyword)}`
+            : `${API_BASE}/all`;
 
         const response = await fetch(url, {
             credentials: 'include'
@@ -34,7 +34,7 @@ export const jobApi = {
 
     // Get single job by ID
     getJobById: async (jobId: string) => {
-        const response = await fetch(`${API_BASE}/job/${jobId}`, {
+        const response = await fetch(`${API_BASE}/${jobId}`, {
             credentials: 'include'
         });
         return handleResponse(response);
@@ -51,7 +51,7 @@ export const jobApi = {
         experience: number;
         position: number;
     }) => {
-        const response = await fetch(`${API_BASE}/job/post`, {
+        const response = await fetch(`${API_BASE}/post`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -62,7 +62,7 @@ export const jobApi = {
 
     // Update a job
     updateJob: async (jobId: string, jobData: any) => {
-        const response = await fetch(`${API_BASE}/job/update/${jobId}`, {
+        const response = await fetch(`${API_BASE}/update/${jobId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -73,7 +73,7 @@ export const jobApi = {
 
     // Delete a job
     deleteJob: async (jobId: string) => {
-        const response = await fetch(`${API_BASE}/job/delete/${jobId}`, {
+        const response = await fetch(`${API_BASE}/delete/${jobId}`, {
             method: 'DELETE',
             credentials: 'include'
         });

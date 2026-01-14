@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { ArrowLeft, MapPin, IndianRupee, Clock, Calendar, Building2, Loader2 } from 'lucide-react';
+import { ArrowLeft, MapPin, IndianRupee, Clock, Calendar, Building2, Loader2, Bookmark, Copy, CheckCircle } from 'lucide-react';
 import { jobApi } from '../../api/jobApi';
+import applicationApi from '../../api/applicationApi';
+import savedJobsApi from '../../api/savedJobsApi';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
-import ApplyModal from '../../components/common/ApplyModal';
 
 type Job = {
     _id: string;
@@ -16,7 +17,6 @@ type Job = {
     jobType: string;
     experience: number;
     position: number;
-    status: 'open' | 'closed';
     createdAt: string;
     applications: string[];
     createdBy: {
@@ -41,31 +41,68 @@ const JobDetails = () => {
     const [job, setJob] = useState<Job | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [showApplyModal, setShowApplyModal] = useState(false);
-    const [successMessage, setSuccessMessage] = useState('');
+    const [hasApplied, setHasApplied] = useState(false);
+    const [checkingApplication, setCheckingApplication] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
+    const [savingJob, setSavingJob] = useState(false);
+
     const { showToast } = useToast();
 
     useEffect(() => {
-        const fetchJob = async () => {
+        const fetchJobAndCheckApplication = async () => {
             if (!id) return;
 
             try {
                 setLoading(true);
+                setCheckingApplication(true);
+
+                // Fetch job details
                 const data = await jobApi.getJobById(id);
                 if (data.success) {
                     setJob(data.job);
                 } else {
                     setError('Job not found');
+                    setLoading(false);
+                    setCheckingApplication(false);
+                    return;
+                }
+
+                // Check if user has already applied (only for job seekers)
+                if (user && user.role === 'job_seeker') {
+                    try {
+                        const applicationsData = await applicationApi.getMyApplications();
+                        if (applicationsData.success && applicationsData.applications) {
+                            // Check if current job ID exists in user's applications
+                            const applied = applicationsData.applications.some(
+                                (app: any) => app.job._id === id || app.job === id
+                            );
+                            setHasApplied(applied);
+                        }
+                    } catch (err) {
+                        // If fetching applications fails, just continue (don't block the page)
+                        console.error('Failed to check application status:', err);
+                    }
+
+                    // Check if job is saved
+                    try {
+                        const savedData = await savedJobsApi.checkIfSaved(id);
+                        if (savedData.success) {
+                            setIsSaved(savedData.isSaved);
+                        }
+                    } catch (err) {
+                        console.error('Failed to check saved status:', err);
+                    }
                 }
             } catch (err: any) {
                 setError(err.message || 'Failed to load job details');
             } finally {
                 setLoading(false);
+                setCheckingApplication(false);
             }
         };
 
-        fetchJob();
-    }, [id]);
+        fetchJobAndCheckApplication();
+    }, [id, user]);
 
     const handleApplyClick = () => {
         if (!user) {
@@ -76,16 +113,40 @@ const JobDetails = () => {
             showToast('Recruiters cannot apply for jobs', 'error');
             return;
         }
-        setShowApplyModal(true);
+        navigate(`/job/${id}/apply`);
     };
 
-    const handleApplicationSuccess = () => {
-        setSuccessMessage('Application submitted successfully!');
-        setTimeout(() => setSuccessMessage(''), 5000);
-        if (id) {
-            jobApi.getJobById(id).then(data => {
-                if (data.success) setJob(data.job);
-            });
+
+    const handleCopy = async () => {
+        try {
+            await navigator.clipboard.writeText(window.location.href);
+            showToast('Job link copied to clipboard!', 'success');
+        } catch (err) {
+            showToast(`Failed to copy link ${err}`, 'error');
+        }
+    };
+
+    const handleToggleSave = async () => {
+        if (!user) {
+            navigate('/login');
+            return;
+        }
+        if (user.role === 'recruiter') {
+            showToast('Recruiters cannot save jobs', 'error');
+            return;
+        }
+
+        setSavingJob(true);
+        try {
+            const result = await savedJobsApi.toggleSaveJob(id!);
+            if (result.success) {
+                setIsSaved(result.isSaved);
+                showToast(result.message, 'success');
+            }
+        } catch (err: any) {
+            showToast(err.message || 'Failed to save job', 'error');
+        } finally {
+            setSavingJob(false);
         }
     };
 
@@ -126,13 +187,6 @@ const JobDetails = () => {
                     Back
                 </button>
 
-                {/* Success Message */}
-                {successMessage && (
-                    <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
-                        {successMessage}
-                    </div>
-                )}
-
                 {/* Job Header */}
                 <div className="bg-white border border-gray-200 rounded-lg p-8 mb-6">
                     <div className="flex items-start justify-between mb-6">
@@ -157,12 +211,6 @@ const JobDetails = () => {
                                 </div>
                             </div>
                         </div>
-                        <span className={`px-3 py-1 text-xs font-medium rounded ${job.status === 'open'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
-                            }`}>
-                            {job.status === 'open' ? 'Open' : 'Closed'}
-                        </span>
                     </div>
 
                     {/* Quick Info */}
@@ -196,102 +244,133 @@ const JobDetails = () => {
                             <div className="font-medium text-gray-900">{job.experience} years</div>
                         </div>
                     </div>
+
+                    {/* Action Buttons - Job Seekers Only */}
+                    {user?.role !== 'recruiter' && (
+                        <div className="flex gap-3 pt-6 border-gray-100">
+                            {/* Apply Button - Primary */}
+                            <button
+                                onClick={handleApplyClick}
+                                disabled={hasApplied || checkingApplication}
+                                className={`flex-1 py-3 font-semibold rounded-lg transition flex items-center justify-center gap-2 ${hasApplied
+                                    ? 'bg-green-50 text-green-700 border-2 border-green-200 cursor-not-allowed'
+                                    : 'bg-gray-900 text-white hover:bg-gray-800 cursor-pointer'
+                                    } ${checkingApplication ? 'opacity-50 cursor-wait' : ''}`}
+                            >
+                                {hasApplied ? (
+                                    <>
+                                        <CheckCircle className="w-5 h-5" />
+                                        Already Applied
+                                    </>
+                                ) : (
+                                    'Apply for this Position'
+                                )}
+                            </button>
+
+                            {/* Save Button - Secondary */}
+                            <button
+                                onClick={handleToggleSave}
+                                disabled={savingJob}
+                                className={`px-6 py-3 border font-medium rounded-lg transition flex items-center gap-2 cursor-pointer ${isSaved
+                                    ? 'border-green-500 text-green-700 bg-green-50 hover:bg-green-100'
+                                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                                    } ${savingJob ? 'opacity-50 cursor-wait' : ''}`}
+                                title={isSaved ? "Unsave job" : "Save for later"}
+                            >
+                                <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
+                                {isSaved ? 'Saved' : 'Save'}
+                            </button>
+
+                            {/* Copy Button - Icon Only */}
+                            <button
+                                onClick={handleCopy}
+                                className="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition cursor-pointer"
+                                title="Copy job link"
+                            >
+                                <Copy className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )}
                 </div>
 
-                {/* Apply Button */}
-                {job.status === 'open' && user?.role !== 'recruiter' && (
-                    <div className="mb-6">
-                        <button
-                            onClick={handleApplyClick}
-                            className="w-full py-4 bg-black text-white font-semibold rounded-lg hover:bg-gray-800 transition"
-                        >
-                            Apply for this Position
-                        </button>
-                    </div>
-                )}
 
-                {/* Job Description */}
+
+
+                {/* Job Details - All in One Section */}
                 <div className="bg-white border border-gray-200 rounded-lg p-8 mb-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Job Description</h2>
-                    <p className="text-gray-700 leading-relaxed whitespace-pre-line">{job.description}</p>
-                </div>
-
-                {/* Requirements */}
-                {job.requirements && job.requirements.length > 0 && (
-                    <div className="bg-white border border-gray-200 rounded-lg p-8 mb-6">
-                        <h2 className="text-lg font-semibold text-gray-900 mb-4">Requirements</h2>
-                        <ul className="space-y-2">
-                            {job.requirements.map((req, index) => (
-                                <li key={index} className="flex items-start gap-3">
-                                    <div className="mt-2 w-1 h-1 rounded-full bg-gray-400 flex-shrink-0" />
-                                    <span className="text-gray-700">{req}</span>
-                                </li>
-                            ))}
-                        </ul>
+                    {/* Job Description */}
+                    <div className="mb-8">
+                        <h2 className="text-lg font-semibold text-gray-900 mb-4">Job Description</h2>
+                        <p className="text-gray-700 leading-relaxed whitespace-pre-line">{job.description}</p>
                     </div>
-                )}
 
-                {/* Additional Info */}
-                <div className="bg-white border border-gray-200 rounded-lg p-8 mb-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Additional Information</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <div className="text-sm text-gray-500 mb-1">Positions Available</div>
-                            <div className="font-medium text-gray-900">{job.position}</div>
+                    {/* Requirements */}
+                    {job.requirements && job.requirements.length > 0 && (
+                        <div className="mb-8 pb-8 border-b border-gray-100">
+                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Requirements</h2>
+                            <ul className="space-y-2">
+                                {job.requirements.map((req, index) => (
+                                    <li key={index} className="flex items-start gap-3">
+                                        <div className="mt-2 w-1 h-1 rounded-full bg-gray-400 flex-shrink-0" />
+                                        <span className="text-gray-700">{req}</span>
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
-                        <div>
-                            <div className="text-sm text-gray-500 mb-1">Applicants</div>
-                            <div className="font-medium text-gray-900">{job.applications?.length || 0}</div>
-                        </div>
-                        <div>
-                            <div className="text-sm text-gray-500 mb-1">Posted On</div>
-                            <div className="font-medium text-gray-900">
-                                {new Date(job.createdAt).toLocaleDateString('en-US', {
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric'
-                                })}
+                    )}
+
+                    {/* Additional Information */}
+                    <div className="mb-8 pb-8 border-b border-gray-100">
+                        <h2 className="text-lg font-semibold text-gray-900 mb-4">Additional Information</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <div className="text-sm text-gray-500 mb-1">Positions Available</div>
+                                <div className="font-medium text-gray-900">{job.position}</div>
+                            </div>
+                            <div>
+                                <div className="text-sm text-gray-500 mb-1">Applicants</div>
+                                <div className="font-medium text-gray-900">{job.applications?.length || 0}</div>
+                            </div>
+                            <div>
+                                <div className="text-sm text-gray-500 mb-1">Posted On</div>
+                                <div className="font-medium text-gray-900">
+                                    {new Date(job.createdAt).toLocaleDateString('en-US', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric'
+                                    })}
+                                </div>
+                            </div>
+                            <div>
+                                <div className="text-sm text-gray-500 mb-1">Posted By</div>
+                                <div className="font-medium text-gray-900">{job.createdBy.fullname}</div>
                             </div>
                         </div>
+                    </div>
+
+                    {/* Company Info */}
+                    {job.createdBy.profile?.company && (
                         <div>
-                            <div className="text-sm text-gray-500 mb-1">Posted By</div>
-                            <div className="font-medium text-gray-900">{job.createdBy.fullname}</div>
+                            <h2 className="text-lg font-semibold text-gray-900 mb-4">About the Company</h2>
+                            <h3 className="font-medium text-gray-900 mb-2">
+                                {job.createdBy.profile.company.name}
+                            </h3>
+                            {job.createdBy.profile.company.description && (
+                                <p className="text-gray-700 mb-4">{job.createdBy.profile.company.description}</p>
+                            )}
+                            {job.createdBy.profile.company.website && (
+                                <a
+                                    href={job.createdBy.profile.company.website}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:text-blue-700 text-sm"
+                                >
+                                    Visit Website →
+                                </a>
+                            )}
                         </div>
-                    </div>
+                    )}
                 </div>
-
-                {/* Company Info */}
-                {job.createdBy.profile?.company && (
-                    <div className="bg-white border border-gray-200 rounded-lg p-8">
-                        <h2 className="text-lg font-semibold text-gray-900 mb-4">About the Company</h2>
-                        <h3 className="font-medium text-gray-900 mb-2">
-                            {job.createdBy.profile.company.name}
-                        </h3>
-                        {job.createdBy.profile.company.description && (
-                            <p className="text-gray-700 mb-4">{job.createdBy.profile.company.description}</p>
-                        )}
-                        {job.createdBy.profile.company.website && (
-                            <a
-                                href={job.createdBy.profile.company.website}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:text-blue-700 text-sm"
-                            >
-                                Visit Website →
-                            </a>
-                        )}
-                    </div>
-                )}
-
-                {/* Apply Modal */}
-                {showApplyModal && job && (
-                    <ApplyModal
-                        jobId={job._id}
-                        jobTitle={job.title}
-                        onClose={() => setShowApplyModal(false)}
-                        onSuccess={handleApplicationSuccess}
-                    />
-                )}
             </div>
         </div>
     );

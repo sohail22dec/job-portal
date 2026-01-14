@@ -66,7 +66,7 @@ export const AuthContextProvider = ({ children }: AuthContextProviderProps) => {
 
             const result = await response.json();
 
-            if (!response.ok) {
+            if (!response.ok || !result.success) {  // Check both
                 return { success: false, error: result.message || 'Login failed' };
             }
             setUser(result.user);
@@ -110,7 +110,7 @@ export const AuthContextProvider = ({ children }: AuthContextProviderProps) => {
 
             const result = await response.json();
 
-            if (!response.ok) {
+            if (!response.ok || !result.success) {
                 return { success: false, error: result.message || 'Signup failed' };
             }
             setUser(result.user);
