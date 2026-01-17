@@ -27,7 +27,7 @@ type Job = {
 
 type JobCardProps = {
     job: Job;
-    variant?: 'recruiter' | 'seeker'; // Controls which view to show
+    variant?: 'recruiter' | 'seeker';
     onEdit?: (job: Job) => void;
     onDelete?: (job: Job) => void;
 };
@@ -135,7 +135,7 @@ const JobCard = ({ job, variant = 'seeker', onEdit, onDelete }: JobCardProps) =>
                         <Link
                             to={`/job/${job._id}/applicants`}
                             className="text-sm text-gray-600 font-medium flex items-center gap-1 hover:text-gray-900"
-                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                            onClick={(e) => e.stopPropagation()}
                         >
                             <Users className="w-4 h-4" />
                             View Applicants ({job.applications?.length || 0})

@@ -1,53 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Loader2, Search, X, Briefcase } from 'lucide-react';
-import { jobApi } from '../../api/jobApi';
+import { useQuery } from '@tanstack/react-query';
+import { jobQueries } from '../../api/queries/jobQueries';
 import JobCard from '../../components/JobCard';
 
-type Job = {
-    _id: string;
-    title: string;
-    description: string;
-    requirements: string[];
-    salary: number;
-    location: string;
-    jobType: string;
-    experience: number;
-    position: number;
-    status: 'open' | 'closed';
-    createdAt: string;
-    applications: string[];
-};
+// Type is inferred from useJobs hook
 
 const Jobs = () => {
-    const [jobs, setJobs] = useState<Job[]>([]);
-    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [activeSearch, setActiveSearch] = useState('');
 
-    useEffect(() => {
-        fetchJobs();
-    }, []);
-
-    const fetchJobs = async (keyword = '') => {
-        try {
-            setLoading(true);
-            const data = await jobApi.getAllJobs(keyword);
-            if (data.success) {
-                setJobs(data.jobs.filter((job: Job) => job.status === 'open'));
-            }
-        } catch (error) {
-            console.error('Failed to fetch jobs:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const { data: jobs = [], isLoading: loading } = useQuery(jobQueries.list(activeSearch));
 
     const handleSearch = () => {
-        fetchJobs(searchQuery);
+        setActiveSearch(searchQuery);
     };
 
     const handleClearSearch = () => {
         setSearchQuery('');
-        fetchJobs('');
+        setActiveSearch('');
     };
 
     return (
@@ -107,7 +78,7 @@ const Jobs = () => {
                     </div>
                 ) : (
                     <div className="space-y-3">
-                        {jobs.map((job) => (
+                        {jobs.map((job: any) => (
                             <JobCard
                                 key={job._id}
                                 job={job}

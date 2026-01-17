@@ -1,108 +1,41 @@
-import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { ArrowLeft, MapPin, IndianRupee, Clock, Calendar, Building2, Loader2, Bookmark, Copy, CheckCircle } from 'lucide-react';
-import { jobApi } from '../../api/jobApi';
-import applicationApi from '../../api/applicationApi';
-import savedJobsApi from '../../api/savedJobsApi';
+import { useQuery } from '@tanstack/react-query';
+import { jobQueries } from '../../api/queries/jobQueries';
+import { applicationQueries } from '../../api/queries/applicationQueries';
+import { savedJobQueries } from '../../api/queries/savedJobQueries';
+import { useToggleSaveJob } from '../../hooks/mutations/useSavedJobMutations';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 
-type Job = {
-    _id: string;
-    title: string;
-    description: string;
-    requirements: string[];
-    salary: number;
-    location: string;
-    jobType: string;
-    experience: number;
-    position: number;
-    createdAt: string;
-    applications: string[];
-    createdBy: {
-        _id: string;
-        fullname: string;
-        email: string;
-        profile: {
-            company: {
-                name: string;
-                description: string;
-                website: string;
-                logo: string;
-            };
-        };
-    };
-};
 
 const JobDetails = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { user } = useAuth();
-    const [job, setJob] = useState<Job | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [hasApplied, setHasApplied] = useState(false);
-    const [checkingApplication, setCheckingApplication] = useState(false);
-    const [isSaved, setIsSaved] = useState(false);
-    const [savingJob, setSavingJob] = useState(false);
-
     const { showToast } = useToast();
 
-    useEffect(() => {
-        const fetchJobAndCheckApplication = async () => {
-            if (!id) return;
+    // Fetch job details
+    const { data: jobData, isLoading: loadingJob, error: jobError } = useQuery(jobQueries.detail(id || ''));
+    const job = jobData?.job;
 
-            try {
-                setLoading(true);
-                setCheckingApplication(true);
+    // Check application status (only for job seekers)
+    const isJobSeeker = user?.role === 'job_seeker';
+    const { data: applicationStatus } = useQuery({
+        ...applicationQueries.status(id || ''),
+        enabled: isJobSeeker && !!id,
+    });
+    const hasApplied = applicationStatus?.hasApplied || false;
 
-                // Fetch job details
-                const data = await jobApi.getJobById(id);
-                if (data.success) {
-                    setJob(data.job);
-                } else {
-                    setError('Job not found');
-                    setLoading(false);
-                    setCheckingApplication(false);
-                    return;
-                }
+    // Check if job is saved (only for job seekers)
+    const { data: savedStatus } = useQuery({
+        ...savedJobQueries.isSaved(id || ''),
+        enabled: isJobSeeker && !!id,
+    });
+    const isSaved = savedStatus?.isSaved || false;
 
-                // Check if user has already applied (only for job seekers)
-                if (user && user.role === 'job_seeker') {
-                    try {
-                        const applicationsData = await applicationApi.getMyApplications();
-                        if (applicationsData.success && applicationsData.applications) {
-                            // Check if current job ID exists in user's applications
-                            const applied = applicationsData.applications.some(
-                                (app: any) => app.job._id === id || app.job === id
-                            );
-                            setHasApplied(applied);
-                        }
-                    } catch (err) {
-                        // If fetching applications fails, just continue (don't block the page)
-                        console.error('Failed to check application status:', err);
-                    }
-
-                    // Check if job is saved
-                    try {
-                        const savedData = await savedJobsApi.checkIfSaved(id);
-                        if (savedData.success) {
-                            setIsSaved(savedData.isSaved);
-                        }
-                    } catch (err) {
-                        console.error('Failed to check saved status:', err);
-                    }
-                }
-            } catch (err: any) {
-                setError(err.message || 'Failed to load job details');
-            } finally {
-                setLoading(false);
-                setCheckingApplication(false);
-            }
-        };
-
-        fetchJobAndCheckApplication();
-    }, [id, user]);
+    // Toggle save mutation
+    const toggleSaveMutation = useToggleSaveJob();
 
     const handleApplyClick = () => {
         if (!user) {
@@ -122,11 +55,11 @@ const JobDetails = () => {
             await navigator.clipboard.writeText(window.location.href);
             showToast('Job link copied to clipboard!', 'success');
         } catch (err) {
-            showToast(`Failed to copy link ${err}`, 'error');
+            showToast('Failed to copy link', 'error');
         }
     };
 
-    const handleToggleSave = async () => {
+    const handleToggleSave = () => {
         if (!user) {
             navigate('/login');
             return;
@@ -136,21 +69,12 @@ const JobDetails = () => {
             return;
         }
 
-        setSavingJob(true);
-        try {
-            const result = await savedJobsApi.toggleSaveJob(id!);
-            if (result.success) {
-                setIsSaved(result.isSaved);
-                showToast(result.message, 'success');
-            }
-        } catch (err: any) {
-            showToast(err.message || 'Failed to save job', 'error');
-        } finally {
-            setSavingJob(false);
+        if (id) {
+            toggleSaveMutation.mutate(id);
         }
     };
 
-    if (loading) {
+    if (loadingJob) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
@@ -158,12 +82,12 @@ const JobDetails = () => {
         );
     }
 
-    if (error || !job) {
+    if (jobError || !job) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
                 <div className="text-center">
                     <h2 className="text-2xl font-semibold text-gray-900 mb-2">Job Not Found</h2>
-                    <p className="text-gray-600 mb-6">{error || 'The job you\'re looking for doesn\'t exist.'}</p>
+                    <p className="text-gray-600 mb-6">{jobError instanceof Error ? jobError.message : 'The job you\'re looking for doesn\'t exist.'}</p>
                     <button
                         onClick={() => navigate(-1)}
                         className="px-4 py-2 bg-black text-white text-sm rounded hover:bg-gray-800"
@@ -180,7 +104,7 @@ const JobDetails = () => {
             <div className="max-w-4xl mx-auto px-6 py-8">
                 {/* Back Button */}
                 <button
-                    onClick={() => navigate(-1)}
+                    onClick={() => navigate("/dashboard")}
                     className="flex items-center gap-2 text-gray-600 hover:text-black mb-6 text-sm"
                 >
                     <ArrowLeft className="w-4 h-4" />
@@ -251,11 +175,11 @@ const JobDetails = () => {
                             {/* Apply Button - Primary */}
                             <button
                                 onClick={handleApplyClick}
-                                disabled={hasApplied || checkingApplication}
+                                disabled={hasApplied}
                                 className={`flex-1 py-3 font-semibold rounded-lg transition flex items-center justify-center gap-2 ${hasApplied
                                     ? 'bg-green-50 text-green-700 border-2 border-green-200 cursor-not-allowed'
                                     : 'bg-gray-900 text-white hover:bg-gray-800 cursor-pointer'
-                                    } ${checkingApplication ? 'opacity-50 cursor-wait' : ''}`}
+                                    }`}
                             >
                                 {hasApplied ? (
                                     <>
@@ -270,11 +194,11 @@ const JobDetails = () => {
                             {/* Save Button - Secondary */}
                             <button
                                 onClick={handleToggleSave}
-                                disabled={savingJob}
+                                disabled={toggleSaveMutation.isPending}
                                 className={`px-6 py-3 border font-medium rounded-lg transition flex items-center gap-2 cursor-pointer ${isSaved
                                     ? 'border-green-500 text-green-700 bg-green-50 hover:bg-green-100'
                                     : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                                    } ${savingJob ? 'opacity-50 cursor-wait' : ''}`}
+                                    } ${toggleSaveMutation.isPending ? 'opacity-50 cursor-wait' : ''}`}
                                 title={isSaved ? "Unsave job" : "Save for later"}
                             >
                                 <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
@@ -309,7 +233,7 @@ const JobDetails = () => {
                         <div className="mb-8 pb-8 border-b border-gray-100">
                             <h2 className="text-lg font-semibold text-gray-900 mb-4">Requirements</h2>
                             <ul className="space-y-2">
-                                {job.requirements.map((req, index) => (
+                                {job.requirements.map((req: string, index: number) => (
                                     <li key={index} className="flex items-start gap-3">
                                         <div className="mt-2 w-1 h-1 rounded-full bg-gray-400 flex-shrink-0" />
                                         <span className="text-gray-700">{req}</span>

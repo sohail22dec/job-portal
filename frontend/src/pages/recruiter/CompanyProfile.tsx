@@ -1,26 +1,26 @@
-import { useActionState, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { ArrowLeft, Edit } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
+import { useUpdateCompanyProfile } from '../../hooks/mutations/useCompanyMutations';
 import CompanyProfileView from '../../components/recruiter/CompanyProfileView';
 import CompanyProfileForm from '../../components/recruiter/CompanyProfileForm';
 
-type ProfileState = {
-    error?: string;
-    success?: boolean;
-};
 
 const CompanyProfile = () => {
     const navigate = useNavigate();
     const { user, refetchUser } = useAuth();
+    const { showToast } = useToast();
     const [isEditMode, setIsEditMode] = useState(false);
     const [logoPreview, setLogoPreview] = useState<string | null>(
         user?.profile?.company?.logo || null
     );
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const hasCompanyData = user?.profile?.company?.description || user?.profile?.company?.website;
-    const { showToast } = useToast();
+
+    // TanStack Query mutation
+    const updateProfileMutation = useUpdateCompanyProfile();
 
     const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -51,54 +51,22 @@ const CompanyProfile = () => {
         setLogoPreview(user?.profile?.company?.logo || null);
     };
 
-    const updateProfileAction = async (_prevState: ProfileState, formData: FormData): Promise<ProfileState> => {
-        try {
-            const description = formData.get('description') as string;
-            const website = formData.get('website') as string;
-
-            if (!description || description.trim().length < 10) {
-                return { error: 'Description must be at least 10 characters' };
-            }
-
-            if (!website || !website.startsWith('http')) {
-                return { error: 'Please enter a valid website URL (starting with http:// or https://)' };
-            }
-
-            // Create form data for file upload
-            const uploadData = new FormData();
-            uploadData.append('description', description);
-            uploadData.append('website', website);
-            if (logoFile) {
-                uploadData.append('logo', logoFile);
-            }
-
-            const response = await fetch('http://localhost:8000/api/v1/user/update-company-profile', {
-                method: 'PUT',
-                credentials: 'include',
-                body: uploadData,
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                return { error: result.message || 'Failed to update profile' };
-            }
-
-            // Refetch user data to update context
-            await refetchUser();
-
-            // Exit edit mode
-            setIsEditMode(false);
-            setLogoFile(null);
-            showToast('Profile updated successfully!', 'success');
-
-            return { success: true };
-        } catch (err: any) {
-            return { error: err.message || 'Failed to update profile. Please try again.' };
+    const handleSubmit = (data: { description: string; website: string }) => {
+        const formData = new FormData();
+        formData.append('description', data.description);
+        formData.append('website', data.website);
+        if (logoFile) {
+            formData.append('logo', logoFile);
         }
-    };
 
-    const [state, action, isPending] = useActionState(updateProfileAction, { success: false });
+        updateProfileMutation.mutate(formData, {
+            onSuccess: () => {
+                refetchUser();
+                setIsEditMode(false);
+                setLogoFile(null);
+            },
+        });
+    };
 
     return (
         <div className="min-h-screen bg-gray-50 py-8">
@@ -147,13 +115,12 @@ const CompanyProfile = () => {
                     <CompanyProfileForm
                         user={user}
                         logoPreview={logoPreview}
-                        error={state.error}
-                        isPending={isPending}
+                        isPending={updateProfileMutation.isPending}
                         hasCompanyData={hasCompanyData}
                         onLogoChange={handleLogoChange}
                         onRemoveLogo={removeLogo}
                         onCancel={handleCancel}
-                        formAction={action}
+                        onSubmit={handleSubmit}
                     />
                 )}
             </div>

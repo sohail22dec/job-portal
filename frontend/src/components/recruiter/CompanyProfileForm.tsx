@@ -1,4 +1,7 @@
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Building2, Upload, X, Loader2 } from 'lucide-react';
+import { companyProfileSchema, type CompanyProfileFormData } from '../../schemas/companyProfileSchema';
 
 type User = {
     profile?: {
@@ -14,35 +17,42 @@ type User = {
 type CompanyProfileFormProps = {
     user: User | null;
     logoPreview: string | null;
-    error?: string;
     isPending: boolean;
     hasCompanyData: boolean;
     onLogoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onRemoveLogo: () => void;
     onCancel: () => void;
-    formAction: any; // From useActionState
+    onSubmit: (data: CompanyProfileFormData) => void;
 };
 
 const CompanyProfileForm = ({
     user,
     logoPreview,
-    error,
     isPending,
     hasCompanyData,
     onLogoChange,
     onRemoveLogo,
     onCancel,
-    formAction
+    onSubmit
 }: CompanyProfileFormProps) => {
+    const { register, handleSubmit, formState: { errors } } = useForm<CompanyProfileFormData>({
+        resolver: zodResolver(companyProfileSchema),
+        defaultValues: {
+            website: user?.profile?.company?.website || '',
+            description: user?.profile?.company?.description || '',
+        },
+    });
+
     return (
         <div className="bg-white border border-gray-200 rounded-lg p-8">
-            {error && (
+            {/* React Hook Form errors */}
+            {(errors.website || errors.description) && (
                 <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
-                    {error}
+                    {errors.website?.message || errors.description?.message}
                 </div>
             )}
 
-            <form action={formAction} className="space-y-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 {/* Company Logo */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -111,10 +121,8 @@ const CompanyProfileForm = ({
                     </label>
                     <input
                         type="url"
-                        name="website"
-                        required
+                        {...register('website')}
                         disabled={isPending}
-                        defaultValue={user?.profile?.company?.website || ''}
                         className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black outline-none text-sm"
                         placeholder="https://www.example.com"
                     />
@@ -126,11 +134,9 @@ const CompanyProfileForm = ({
                         Company Description
                     </label>
                     <textarea
-                        name="description"
-                        required
+                        {...register('description')}
                         rows={6}
                         disabled={isPending}
-                        defaultValue={user?.profile?.company?.description || ''}
                         className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black outline-none text-sm resize-none"
                         placeholder="Tell job seekers about your company, culture, and what makes it a great place to work..."
                     />

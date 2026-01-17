@@ -1,95 +1,32 @@
-import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router';
 import { Loader2, Bookmark, MapPin, IndianRupee, Clock, Building2, ArrowLeft } from 'lucide-react';
-import savedJobsApi from '../../api/savedJobsApi';
-import { useAuth } from '../../hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
+import { savedJobQueries } from '../../api/queries/savedJobQueries';
+import { useToggleSaveJob } from '../../hooks/mutations/useSavedJobMutations';
 import { useToast } from '../../hooks/useToast';
 
-type Job = {
-    _id: string;
-    title: string;
-    description: string;
-    requirements: string[];
-    salary: number;
-    location: string;
-    jobType: string;
-    experience: number;
-    position: number;
-    createdAt: string;
-    applications: string[];
-    createdBy: {
-        _id: string;
-        fullname: string;
-        email: string;
-        profile: {
-            company: {
-                name: string;
-                description: string;
-                website: string;
-                logo: string;
-            };
-        };
-    };
-};
 
 const SavedJobs = () => {
-    const [savedJobs, setSavedJobs] = useState<Job[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
     const navigate = useNavigate();
-    const { user } = useAuth();
     const { showToast } = useToast();
 
-    useEffect(() => {
-        if (!user || user.role !== 'job_seeker') {
-            navigate('/');
-            return;
-        }
+    const { data: savedJobs = [], isLoading: loading } = useQuery(savedJobQueries.my());
 
-        const fetchSavedJobs = async () => {
-            try {
-                setLoading(true);
-                const data = await savedJobsApi.getSavedJobs();
-                if (data.success) {
-                    setSavedJobs(data.savedJobs);
-                }
-            } catch (err: any) {
-                setError(err.message || 'Failed to load saved jobs');
-            } finally {
-                setLoading(false);
-            }
-        };
+    // Toggle save mutation
+    const toggleSaveMutation = useToggleSaveJob();
 
-        fetchSavedJobs();
-    }, [user, navigate]);
-
-    const handleUnsave = async (jobId: string, jobTitle: string) => {
-        try {
-            const result = await savedJobsApi.toggleSaveJob(jobId);
-            if (result.success) {
-                setSavedJobs(savedJobs.filter(job => job._id !== jobId));
+    const handleUnsave = (jobId: string, jobTitle: string) => {
+        toggleSaveMutation.mutate(jobId, {
+            onSuccess: () => {
                 showToast(`Removed "${jobTitle}"`, 'success');
             }
-        } catch (err: any) {
-            showToast(err.message || 'Failed to unsave job', 'error');
-        }
+        });
     };
 
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-                <div className="text-center">
-                    <h2 className="text-2xl font-semibold text-gray-900 mb-2">Error</h2>
-                    <p className="text-gray-600">{error}</p>
-                </div>
             </div>
         );
     }
@@ -129,7 +66,7 @@ const SavedJobs = () => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {savedJobs.map((job) => (
+                        {savedJobs.map((job: any) => (
                             <Link
                                 key={job._id}
                                 to={`/job/${job._id}`}

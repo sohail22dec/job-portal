@@ -1,156 +1,96 @@
-import { useActionState, useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { useMutation } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
-
-type SignupState = {
-    error?: string;
-    success?: boolean;
-};
-
-type ValidationErrors = {
-    fullname?: string;
-    email?: string;
-    password?: string;
-    phoneNumber?: string;
-    role?: string;
-    companyName?: string;
-};
+import { signupSchema, type SignupFormData } from '../../schemas/authSchemas';
 
 const Signup = () => {
     const [showPassword, setShowPassword] = useState(false);
-    const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
-    const [selectedRole, setSelectedRole] = useState<string>('');
+
     const { signup } = useAuth();
     const { showToast } = useToast();
     const navigate = useNavigate();
 
-    const validateForm = (formData: FormData): boolean => {
-        const errors: ValidationErrors = {};
-        const fullname = formData.get('fullname') as string;
-        const email = formData.get('email') as string;
-        const password = formData.get('password') as string;
-        const phoneNumber = formData.get('phoneNumber') as string;
-        const role = formData.get('role') as string;
-        const companyName = formData.get('companyName') as string;
+    const {
+        register,
+        handleSubmit,
+        watch,
+        formState: { errors }
+    } = useForm<SignupFormData>({
+        resolver: zodResolver(signupSchema),
+        mode: 'onBlur',
+    });
 
-        if (!fullname || fullname.trim() === '') {
-            errors.fullname = 'Full name is required';
-        } else if (fullname.trim().length < 2) {
-            errors.fullname = 'Name must be at least 2 characters';
-        }
+    const selectedRole = watch('role');
 
-        if (!email || email.trim() === '') {
-            errors.email = 'Email is required';
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            errors.email = 'Please enter a valid email';
-        }
-
-        if (!password || password.trim() === '') {
-            errors.password = 'Password is required';
-        } else if (password.length < 6) {
-            errors.password = 'Password must be at least 6 characters';
-        }
-
-        if (!role) {
-            errors.role = 'Please select your role';
-        }
-
-        // Phone number required ONLY for job seekers
-        if (role === 'job_seeker') {
-            if (!phoneNumber || phoneNumber.trim() === '') {
-                errors.phoneNumber = 'Phone number is required';
-            } else if (!/^\d{10}$/.test(phoneNumber.replace(/\D/g, ''))) {
-                errors.phoneNumber = 'Please enter a valid 10-digit phone number';
+    const signupMutation = useMutation({
+        mutationFn: async (data: SignupFormData) => {
+            return await signup(
+                data.fullname,
+                data.email,
+                data.password,
+                data.role,
+                data.phoneNumber || '',
+                data.companyName || ''
+            );
+        },
+        onSuccess: (result) => {
+            if (result.success) {
+                showToast('Account created successfully!', 'success');
+                navigate('/dashboard');
+            } else if (result.error) {
+                showToast(result.error, 'error');
             }
-        }
-
-        // Company name required for recruiters
-        if (role === 'recruiter' && (!companyName || companyName.trim() === '')) {
-            errors.companyName = 'Company name is required for recruiters';
-        }
-
-        setValidationErrors(errors);
-        return Object.keys(errors).length === 0;
-    };
-
-    const signupAction = async (_prevState: SignupState, formData: FormData): Promise<SignupState> => {
-        setValidationErrors({});
-
-        if (!validateForm(formData)) {
-            return { error: 'Please fix the errors below' };
-        }
-
-        const result = await signup(
-            formData.get('fullname') as string,
-            formData.get('email') as string,
-            formData.get('password') as string,
-            formData.get('role') as string,
-            formData.get('phoneNumber') as string,
-            formData.get('companyName') as string
-        );
-
-        if (result.success) {
-            navigate('/dashboard');
-            return { success: true };
-        }
-
-        if (result.error) {
-            showToast(result.error, 'error');
-        }
-        return { error: result.error || 'Signup failed' };
-    };
-
-    const [, action, isPending] = useActionState(signupAction, { success: false });
+        },
+        onError: (error: any) => {
+            showToast(error.message || 'Signup failed', 'error');
+        },
+    });
 
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
             <div className="w-full max-w-md">
-                {/* Header */}
                 <div className="text-center mb-8">
                     <h2 className="text-3xl font-semibold text-gray-900 mb-2">Create Account</h2>
                     <p className="text-gray-600">Start your journey today</p>
                 </div>
 
-                {/* Form */}
                 <div className="bg-white border border-gray-200 rounded-lg p-8">
-                    <form action={action}>
-                        {/* Full Name */}
+                    <form onSubmit={handleSubmit((data: SignupFormData) => signupMutation.mutate(data))}>
                         <div className="mb-4">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Full Name
                             </label>
                             <input
                                 type="text"
-                                name="fullname"
                                 placeholder="John Doe"
+                                {...register('fullname')}
                                 className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black outline-none text-sm"
                             />
-                            {validationErrors.fullname && (
-                                <p className="mt-1 text-xs text-red-600">{validationErrors.fullname}</p>
+                            {errors.fullname && (
+                                <p className="mt-1 text-xs text-red-600">{errors.fullname.message}</p>
                             )}
                         </div>
 
-                        {/* Email */}
                         <div className="mb-4">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Email
                             </label>
                             <input
                                 type="email"
-                                name="email"
                                 placeholder="you@example.com"
+                                {...register('email')}
                                 className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black outline-none text-sm"
                             />
-                            {validationErrors.email && (
-                                <p className="mt-1 text-xs text-red-600">{validationErrors.email}</p>
+                            {errors.email && (
+                                <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>
                             )}
                         </div>
 
-
-
-                        {/* Password */}
                         <div className="mb-4">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Password
@@ -158,8 +98,8 @@ const Signup = () => {
                             <div className="relative">
                                 <input
                                     type={showPassword ? 'text' : 'password'}
-                                    name="password"
                                     placeholder="••••••••"
+                                    {...register('password')}
                                     className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black outline-none text-sm"
                                 />
                                 <button
@@ -170,8 +110,8 @@ const Signup = () => {
                                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                 </button>
                             </div>
-                            {validationErrors.password && (
-                                <p className="mt-1 text-xs text-red-600">{validationErrors.password}</p>
+                            {errors.password && (
+                                <p className="mt-1 text-xs text-red-600">{errors.password.message}</p>
                             )}
                         </div>
 
@@ -183,17 +123,16 @@ const Signup = () => {
                                 </label>
                                 <input
                                     type="tel"
-                                    name="phoneNumber"
                                     placeholder="1234567890"
+                                    {...register('phoneNumber')}
                                     className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black outline-none text-sm"
                                 />
-                                {validationErrors.phoneNumber && (
-                                    <p className="mt-1 text-xs text-red-600">{validationErrors.phoneNumber}</p>
+                                {errors.phoneNumber && (
+                                    <p className="mt-1 text-xs text-red-600">{errors.phoneNumber.message}</p>
                                 )}
                             </div>
                         )}
 
-                        {/* Company Name (Only for Recruiters) */}
                         {selectedRole === 'recruiter' && (
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -201,17 +140,16 @@ const Signup = () => {
                                 </label>
                                 <input
                                     type="text"
-                                    name="companyName"
                                     placeholder="Your Company Inc."
+                                    {...register('companyName')}
                                     className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black outline-none text-sm"
                                 />
-                                {validationErrors.companyName && (
-                                    <p className="mt-1 text-xs text-red-600">{validationErrors.companyName}</p>
+                                {errors.companyName && (
+                                    <p className="mt-1 text-xs text-red-600">{errors.companyName.message}</p>
                                 )}
                             </div>
                         )}
 
-                        {/* Role Selection */}
                         <div className="mb-4">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 I am a
@@ -223,10 +161,9 @@ const Signup = () => {
                                     }`}>
                                     <input
                                         type="radio"
-                                        name="role"
                                         value="job_seeker"
+                                        {...register('role')}
                                         className="sr-only"
-                                        onChange={(e) => setSelectedRole(e.target.value)}
                                     />
                                     <div className="text-center">
                                         <div className="text-sm font-medium text-gray-900">Job Seeker</div>
@@ -238,28 +175,26 @@ const Signup = () => {
                                     }`}>
                                     <input
                                         type="radio"
-                                        name="role"
                                         value="recruiter"
+                                        {...register('role')}
                                         className="sr-only"
-                                        onChange={(e) => setSelectedRole(e.target.value)}
                                     />
                                     <div className="text-center">
                                         <div className="text-sm font-medium text-gray-900">Recruiter</div>
                                     </div>
                                 </label>
                             </div>
-                            {validationErrors.role && (
-                                <p className="mt-1 text-xs text-red-600">{validationErrors.role}</p>
+                            {errors.role && (
+                                <p className="mt-1 text-xs text-red-600">{errors.role.message}</p>
                             )}
                         </div>
 
-                        {/* Submit Button */}
                         <button
                             type="submit"
-                            disabled={isPending}
+                            disabled={signupMutation.isPending}
                             className="w-full py-3 bg-black text-white font-medium rounded hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
                         >
-                            {isPending ? (
+                            {signupMutation.isPending ? (
                                 <>
                                     <Loader2 className="w-4 h-4 animate-spin" />
                                     Creating account...
@@ -269,7 +204,6 @@ const Signup = () => {
                             )}
                         </button>
 
-                        {/* Login Link */}
                         <p className="mt-6 text-center text-sm text-gray-600">
                             Already have an account?{' '}
                             <Link to="/login" className="text-black font-medium hover:underline">

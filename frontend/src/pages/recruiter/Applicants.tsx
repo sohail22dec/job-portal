@@ -1,87 +1,32 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { ArrowLeft, Mail, Phone, FileText, Loader2 } from 'lucide-react';
-import applicationApi from '../../api/applicationApi';
-import { jobApi } from '../../api/jobApi';
-import { useToast } from '../../hooks/useToast';
+import { useQuery } from '@tanstack/react-query';
+import { applicationQueries } from '../../api/queries/applicationQueries';
+import { jobQueries } from '../../api/queries/jobQueries';
+import { useUpdateApplicationStatus } from '../../hooks/mutations/useApplicationMutations';
 
-type Application = {
-    _id: string;
-    applicant: {
-        _id: string;
-        fullname: string;
-        email: string;
-        phoneNumber?: string;
-    };
-    status: 'pending' | 'reviewing' | 'accepted' | 'rejected';
-    coverLetter?: string;
-    resume?: string;
-    createdAt: string;
-};
-
-type Job = {
-    _id: string;
-    title: string;
-    company?: string;
-};
 
 const Applicants = () => {
     const { jobId } = useParams<{ jobId: string }>();
     const navigate = useNavigate();
-    const [applications, setApplications] = useState<Application[]>([]);
-    const [job, setJob] = useState<Job | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [updatingId, setUpdatingId] = useState<string | null>(null);
     const [filterStatus, setFilterStatus] = useState<string>('all');
-    const { showToast } = useToast();
 
-    useEffect(() => {
-        if (jobId) {
-            fetchJobAndApplicants();
-        }
-    }, [jobId]);
+    // Fetch job details
+    const { data: jobData, isLoading: loadingJob } = useQuery(jobQueries.detail(jobId || ''));
+    const job = jobData?.job;
 
-    const fetchJobAndApplicants = async () => {
-        if (!jobId) return;
+    // Fetch applications for this job
+    const { data: applicationsData, isLoading: loadingApps } = useQuery(applicationQueries.byJob(jobId || ''));
+    const applications = applicationsData?.success ? applicationsData.applications : [];
 
-        try {
-            setLoading(true);
+    // Update application status mutation
+    const updateStatusMutation = useUpdateApplicationStatus();
 
-            const jobData = await jobApi.getJobById(jobId);
-            if (jobData.success) {
-                setJob(jobData.job);
-            }
+    const loading = loadingJob || loadingApps;
 
-            const appData = await applicationApi.getJobApplicants(jobId);
-            if (appData.success) {
-                setApplications(appData.applications);
-            }
-        } catch (err: any) {
-            setError(err.message || 'Failed to load data');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const updateStatus = async (applicationId: string, newStatus: string) => {
-        try {
-            setUpdatingId(applicationId);
-            const data = await applicationApi.updateApplicationStatus(applicationId, newStatus);
-            if (data.success) {
-                setApplications(prev =>
-                    prev.map(app =>
-                        app._id === applicationId
-                            ? { ...app, status: newStatus as Application['status'] }
-                            : app
-                    )
-                );
-            }
-        } catch (err: any) {
-            showToast(err.message || 'Failed to update status', 'error');
-        } finally {
-            setUpdatingId(null);
-        }
+    const updateStatus = (applicationId: string, newStatus: string) => {
+        updateStatusMutation.mutate({ applicationId, status: newStatus });
     };
 
     const getStatusBadge = (status: string) => {
@@ -96,28 +41,12 @@ const Applicants = () => {
 
     const filteredApplications = filterStatus === 'all'
         ? applications
-        : applications.filter(app => app.status === filterStatus);
+        : applications.filter((app: any) => app.status === filterStatus);
 
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-                <div className="text-center">
-                    <p className="text-gray-600 mb-4">{error}</p>
-                    <button
-                        onClick={() => navigate('/recruiter-dashboard')}
-                        className="px-4 py-2 bg-black text-white text-sm rounded hover:bg-gray-800"
-                    >
-                        Back to Dashboard
-                    </button>
-                </div>
             </div>
         );
     }
@@ -164,7 +93,7 @@ const Applicants = () => {
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        {filteredApplications.map((app) => {
+                        {filteredApplications.map((app: any) => {
                             const badge = getStatusBadge(app.status);
                             return (
                                 <div key={app._id} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -228,28 +157,28 @@ const Applicants = () => {
                                             {app.status !== 'reviewing' && (
                                                 <button
                                                     onClick={() => updateStatus(app._id, 'reviewing')}
-                                                    disabled={updatingId === app._id}
+                                                    disabled={updateStatusMutation.isPending}
                                                     className="px-4 py-2 text-sm bg-black text-white rounded hover:bg-gray-800 disabled:opacity-50"
                                                 >
-                                                    {updatingId === app._id ? 'Updating...' : 'Review'}
+                                                    {updateStatusMutation.isPending ? 'Updating...' : 'Review'}
                                                 </button>
                                             )}
                                             {app.status !== 'accepted' && (
                                                 <button
                                                     onClick={() => updateStatus(app._id, 'accepted')}
-                                                    disabled={updatingId === app._id}
+                                                    disabled={updateStatusMutation.isPending}
                                                     className="px-4 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
                                                 >
-                                                    {updatingId === app._id ? 'Updating...' : 'Accept'}
+                                                    {updateStatusMutation.isPending ? 'Updating...' : 'Accept'}
                                                 </button>
                                             )}
                                             {app.status !== 'rejected' && (
                                                 <button
                                                     onClick={() => updateStatus(app._id, 'rejected')}
-                                                    disabled={updatingId === app._id}
+                                                    disabled={updateStatusMutation.isPending}
                                                     className="px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
                                                 >
-                                                    {updatingId === app._id ? 'Updating...' : 'Reject'}
+                                                    {updateStatusMutation.isPending ? 'Updating...' : 'Reject'}
                                                 </button>
                                             )}
                                         </div>

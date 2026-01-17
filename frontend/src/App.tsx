@@ -1,22 +1,35 @@
 import { createBrowserRouter, RouterProvider } from "react-router";
 import Root from "./Root";
-import Landing from "./pages/common/Landing";
+import Landing from "./pages/shared/Landing";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
-import Dashboard from "./pages/common/Dashboard";
+import Dashboard from "./pages/shared/Dashboard";
 import RecruiterDashboard from "./pages/recruiter/Dashboard";
 import JobSeekerDashboard from "./pages/job-seeker/Dashboard";
 import JobsList from "./pages/job-seeker/JobsList";
-import JobDetails from "./pages/jobs/JobDetails";
+import JobDetails from "./pages/shared/JobDetails";
 import SavedJobs from "./pages/job-seeker/SavedJobs";
 import ApplyJob from "./pages/job-seeker/ApplyJob";
 import Applicants from "./pages/recruiter/Applicants";
 import PostJob from "./pages/recruiter/PostJob";
 import CompanyProfile from "./pages/recruiter/CompanyProfile";
-import ErrorPage from "./pages/common/ErrorPage";
+import ErrorPage from "./pages/shared/ErrorPage";
 import { AuthContextProvider } from "../contexts/AuthContext";
 import { ToastProvider } from "../contexts/ToastContext";
 import Toast from "./components/Toast";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,
+      retry: 1,
+    },
+    mutations: {
+      retry: 1,
+    },
+  },
+});
 
 const appRouter = createBrowserRouter([
   {
@@ -86,12 +99,14 @@ const appRouter = createBrowserRouter([
 
 function App() {
   return (
-    <AuthContextProvider>
-      <ToastProvider>
-        <Toast />
-        <RouterProvider router={appRouter} />
-      </ToastProvider>
-    </AuthContextProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthContextProvider>
+        <ToastProvider>
+          <Toast />
+          <RouterProvider router={appRouter} />
+        </ToastProvider>
+      </AuthContextProvider>
+    </QueryClientProvider>
   );
 }
 

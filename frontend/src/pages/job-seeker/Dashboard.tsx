@@ -1,66 +1,32 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router';
 import { Briefcase, Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
-import applicationApi from '../../api/applicationApi';
+import { applicationQueries } from '../../api/queries/applicationQueries';
 
-type Application = {
-    _id: string;
-    job: {
-        _id: string;
-        title: string;
-        company?: string;
-        location: string;
-        salary: number;
-        createdBy: {
-            fullname: string;
-            email: string;
-        };
-    };
-    status: 'pending' | 'reviewing' | 'accepted' | 'rejected';
-    coverLetter?: string;
-    createdAt: string;
-    updatedAt: string;
-};
+// Type is inferred from useMyApplications hook
 
 type FilterTab = 'all' | 'pending' | 'reviewing' | 'accepted' | 'rejected';
 
 const JobSeekerDashboard = () => {
-    const [applications, setApplications] = useState<Application[]>([]);
-    const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<FilterTab>('all');
     const { user } = useAuth();
 
-    useEffect(() => {
-        fetchApplications();
-    }, []);
-
-    const fetchApplications = async () => {
-        try {
-            setLoading(true);
-            const data = await applicationApi.getMyApplications();
-            if (data.success) {
-                setApplications(data.applications);
-            }
-        } catch (error) {
-            console.error('Failed to fetch applications:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const { data: applications = [], isLoading: loading } = useQuery(applicationQueries.my());
 
     // Filter applications based on active tab
     const filteredApplications = activeTab === 'all'
         ? applications
-        : applications.filter(app => app.status === activeTab);
+        : applications.filter((app: any) => app.status === activeTab);
 
     // Calculate stats for tabs
     const stats = {
         all: applications.length,
-        pending: applications.filter(app => app.status === 'pending').length,
-        reviewing: applications.filter(app => app.status === 'reviewing').length,
-        accepted: applications.filter(app => app.status === 'accepted').length,
-        rejected: applications.filter(app => app.status === 'rejected').length,
+        pending: applications.filter((app: any) => app.status === 'pending').length,
+        reviewing: applications.filter((app: any) => app.status === 'reviewing').length,
+        accepted: applications.filter((app: any) => app.status === 'accepted').length,
+        rejected: applications.filter((app: any) => app.status === 'rejected').length,
     };
 
     const tabs: { key: FilterTab; label: string }[] = [
@@ -103,8 +69,8 @@ const JobSeekerDashboard = () => {
                                 key={tab.key}
                                 onClick={() => setActiveTab(tab.key)}
                                 className={`px-6 py-3 text-sm font-medium transition relative ${activeTab === tab.key
-                                        ? 'text-gray-900 border-b-2 border-gray-900'
-                                        : 'text-gray-600 hover:text-gray-900'
+                                    ? 'text-gray-900 border-b-2 border-gray-900'
+                                    : 'text-gray-600 hover:text-gray-900'
                                     }`}
                             >
                                 {tab.label}
@@ -143,7 +109,7 @@ const JobSeekerDashboard = () => {
                     </div>
                 ) : (
                     <div className="bg-white border border-gray-200 rounded-lg divide-y divide-gray-100">
-                        {filteredApplications.map((application) => (
+                        {filteredApplications.map((application: any) => (
                             <div key={application._id} className="p-5 hover:bg-gray-50 transition">
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1">

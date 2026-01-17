@@ -1,40 +1,43 @@
-import { useActionState, useState, useEffect, type KeyboardEvent } from 'react';
+import { useState, useEffect, type KeyboardEvent } from 'react';
 import { useParams, useNavigate } from 'react-router';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import { jobApi } from '../../api/jobApi';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
-
-type Job = {
-    _id: string;
-    title: string;
-    description: string;
-    requirements: string[];
-    salary: number;
-    location: string;
-    jobType: string;
-    experience: number;
-    position: number;
-    status: string;
-};
-
-type PostJobState = {
-    error?: string;
-    success?: boolean;
-};
+import { useCreateJob, useUpdateJob } from '../../hooks/mutations/useJobMutations';
+import { jobQueries } from '../../api/queries/jobQueries';
+import { jobSchema, type JobFormData } from '../../schemas/jobSchemas';
+import LoadingSpinner from '../../components/LoadingSpinner';
 
 const PostJob = () => {
     const { jobId } = useParams<{ jobId?: string }>();
     const navigate = useNavigate();
     const { user } = useAuth();
-    const [job, setJob] = useState<Job | null>(null);
-    const [loading, setLoading] = useState(!!jobId);
     const isEditMode = !!jobId;
     const { showToast } = useToast();
 
-    const [requirements, setRequirements] = useState(
-        job ? job.requirements.map(r => `• ${r}`).join('\n') : ''
-    );
+    const [requirements, setRequirements] = useState('');
+
+    // Fetch job data for editing
+    const { data: jobData, isLoading: loadingJob } = useQuery(jobQueries.detail(jobId || ''));
+    const job = jobData?.job;
+
+    // Mutations
+    const createMutation = useCreateJob();
+    const updateMutation = useUpdateJob();
+
+    // Form setup
+    const { register, handleSubmit, formState: { errors, isSubmitting }, setValue } = useForm<JobFormData>({
+        resolver: zodResolver(jobSchema),
+        mode: 'onBlur',
+        defaultValues: {
+            status: 'open',
+            position: 1,
+            jobType: 'Full-time',
+        },
+    });
 
     // Check if company profile is complete
     useEffect(() => {
@@ -48,62 +51,43 @@ const PostJob = () => {
                 return;
             }
         }
-    }, [user, navigate]);
+    }, [user, navigate, showToast]);
 
+    // Populate form with job data when editing
     useEffect(() => {
-        if (jobId) {
-            fetchJob();
+        if (isEditMode && job) {
+            setValue('title', job.title);
+            setValue('description', job.description);
+            setValue('salary', job.salary);
+            setValue('location', job.location);
+            setValue('jobType', job.jobType);
+            setValue('experience', job.experience);
+            setValue('position', job.position);
+            setValue('status', job.status);
+
+            const formattedRequirements = job.requirements.map((r: string) => `• ${r}`).join('\n');
+            setRequirements(formattedRequirements);
         }
-    }, [jobId]);
+    }, [job, isEditMode, setValue]);
 
-    const fetchJob = async () => {
-        if (!jobId) return;
-        try {
-            const data = await jobApi.getJobById(jobId);
-            if (data.success) {
-                setJob(data.job);
-                setRequirements(data.job.requirements.map((r: string) => `• ${r}`).join('\n'));
-            }
-        } catch (error) {
-            console.error('Failed to fetch job:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const onSubmit = (data: JobFormData) => {
+        // Parse requirements from textarea
+        const parsedRequirements = requirements
+            .split('\n')
+            .map(r => r.trim().replace(/^[•\-]\s*/, ''))
+            .filter(r => r.length > 0);
 
-    const jobAction = async (_prevState: PostJobState, formData: FormData): Promise<PostJobState> => {
-        try {
-            const jobData = {
-                title: isEditMode && job ? job.title : formData.get('title') as string,
-                description: formData.get('description') as string,
-                requirements: requirements
-                    .split('\n')
-                    .map(r => r.trim().replace(/^[•\-]\s*/, ''))
-                    .filter(r => r.length > 0),
-                salary: isEditMode && job ? job.salary : Number(formData.get('salary')),
-                location: isEditMode && job ? job.location : formData.get('location') as string,
-                jobType: isEditMode && job ? job.jobType : formData.get('jobType') as string,
-                experience: isEditMode && job && job ? job.experience : Number(formData.get('experience')),
-                position: Number(formData.get('position')),
-                status: formData.get('status') as string
-            };
+        const jobData = {
+            ...data,
+            requirements: parsedRequirements,
+        };
 
-            const data = isEditMode && job
-                ? await jobApi.updateJob(job._id, jobData)
-                : await jobApi.postJob(jobData);
-
-            if (data.success) {
-                navigate('/recruiter-dashboard');
-                return { success: true };
-            }
-
-            return { error: data.message || `Failed to ${isEditMode ? 'update' : 'post'} job` };
-        } catch (err: any) {
-            return { error: err.message || `Failed to ${isEditMode ? 'update' : 'post'} job. Please try again.` };
+        if (isEditMode && jobId) {
+            updateMutation.mutate({ jobId, data: jobData });
+        } else {
+            createMutation.mutate(jobData);
         }
     };
-
-    const [state, action, isPending] = useActionState(jobAction, { success: false });
 
     const handleRequirementsKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === 'Enter') {
@@ -131,13 +115,9 @@ const PostJob = () => {
         }
     };
 
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-            </div>
-        );
-    }
+    if (loadingJob && isEditMode) return <LoadingSpinner />
+
+    const isPending = isSubmitting || createMutation.isPending || updateMutation.isPending;
 
     return (
         <div className="min-h-screen bg-gray-50 py-8">
@@ -162,34 +142,29 @@ const PostJob = () => {
 
                 {/* Form */}
                 <div className="bg-white border border-gray-200 rounded-lg p-8">
-                    {state.error && (
-                        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
-                            {state.error}
-                        </div>
-                    )}
-
                     {isEditMode && (
                         <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded text-blue-700 text-sm">
                             <strong>Note:</strong> Title, Salary, Location, Job Type, and Experience cannot be changed to protect applicants' interests.
                         </div>
                     )}
 
-                    <form action={action} className="space-y-6">
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                         {/* Job Title */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Job Title {isEditMode && <span className="text-xs text-gray-500">(Cannot be changed)</span>}
                             </label>
                             <input
+                                {...register('title')}
                                 type="text"
-                                name="title"
-                                required
                                 disabled={isPending || isEditMode}
-                                defaultValue={job?.title}
                                 className={`w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black outline-none text-sm ${isEditMode ? 'bg-gray-100 cursor-not-allowed' : ''
-                                    }`}
+                                    } ${errors.title ? 'border-red-500' : ''}`}
                                 placeholder="e.g., Senior React Developer"
                             />
+                            {errors.title && (
+                                <p className="mt-1 text-xs text-red-600">{errors.title.message}</p>
+                            )}
                         </div>
 
                         {/* Description */}
@@ -198,14 +173,16 @@ const PostJob = () => {
                                 Job Description
                             </label>
                             <textarea
-                                name="description"
-                                required
+                                {...register('description')}
                                 rows={5}
                                 disabled={isPending}
-                                defaultValue={job?.description}
-                                className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black outline-none text-sm resize-none"
+                                className={`w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black outline-none text-sm resize-none ${errors.description ? 'border-red-500' : ''
+                                    }`}
                                 placeholder="Describe the role, responsibilities, and what makes this position exciting..."
                             />
+                            {errors.description && (
+                                <p className="mt-1 text-xs text-red-600">{errors.description.message}</p>
+                            )}
                             <p className="mt-1 text-xs text-gray-500">Be detailed to attract the right candidates</p>
                         </div>
 
@@ -234,15 +211,16 @@ const PostJob = () => {
                                     Annual Salary (₹) {isEditMode && <span className="text-xs text-gray-500">(Locked)</span>}
                                 </label>
                                 <input
+                                    {...register('salary', { valueAsNumber: true })}
                                     type="number"
-                                    name="salary"
-                                    required
                                     disabled={isPending || isEditMode}
-                                    defaultValue={job?.salary}
                                     className={`w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black outline-none text-sm ${isEditMode ? 'bg-gray-100 cursor-not-allowed' : ''
-                                        }`}
+                                        } ${errors.salary ? 'border-red-500' : ''}`}
                                     placeholder="1200000"
                                 />
+                                {errors.salary && (
+                                    <p className="mt-1 text-xs text-red-600">{errors.salary.message}</p>
+                                )}
                             </div>
 
                             <div>
@@ -250,15 +228,16 @@ const PostJob = () => {
                                     Location {isEditMode && <span className="text-xs text-gray-500">(Locked)</span>}
                                 </label>
                                 <input
+                                    {...register('location')}
                                     type="text"
-                                    name="location"
-                                    required
                                     disabled={isPending || isEditMode}
-                                    defaultValue={job?.location}
                                     className={`w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black outline-none text-sm ${isEditMode ? 'bg-gray-100 cursor-not-allowed' : ''
-                                        }`}
+                                        } ${errors.location ? 'border-red-500' : ''}`}
                                     placeholder="Remote / Bangalore, India"
                                 />
+                                {errors.location && (
+                                    <p className="mt-1 text-xs text-red-600">{errors.location.message}</p>
+                                )}
                             </div>
                         </div>
 
@@ -269,17 +248,19 @@ const PostJob = () => {
                                     Job Type {isEditMode && <span className="text-xs text-gray-500">(Locked)</span>}
                                 </label>
                                 <select
-                                    name="jobType"
+                                    {...register('jobType')}
                                     disabled={isPending || isEditMode}
-                                    defaultValue={job?.jobType || 'Full-time'}
                                     className={`w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black outline-none text-sm ${isEditMode ? 'bg-gray-100 cursor-not-allowed' : ''
-                                        }`}
+                                        } ${errors.jobType ? 'border-red-500' : ''}`}
                                 >
                                     <option>Full-time</option>
                                     <option>Part-time</option>
                                     <option>Contract</option>
                                     <option>Internship</option>
                                 </select>
+                                {errors.jobType && (
+                                    <p className="mt-1 text-xs text-red-600">{errors.jobType.message}</p>
+                                )}
                             </div>
 
                             <div>
@@ -287,15 +268,16 @@ const PostJob = () => {
                                     Experience (Years) {isEditMode && <span className="text-xs text-gray-500">(Locked)</span>}
                                 </label>
                                 <input
+                                    {...register('experience', { valueAsNumber: true })}
                                     type="number"
-                                    name="experience"
-                                    required
                                     disabled={isPending || isEditMode}
-                                    defaultValue={job?.experience}
                                     className={`w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black outline-none text-sm ${isEditMode ? 'bg-gray-100 cursor-not-allowed' : ''
-                                        }`}
+                                        } ${errors.experience ? 'border-red-500' : ''}`}
                                     placeholder="3"
                                 />
+                                {errors.experience && (
+                                    <p className="mt-1 text-xs text-red-600">{errors.experience.message}</p>
+                                )}
                             </div>
                         </div>
 
@@ -305,15 +287,17 @@ const PostJob = () => {
                                 Number of Openings
                             </label>
                             <input
+                                {...register('position', { valueAsNumber: true })}
                                 type="number"
-                                name="position"
-                                required
                                 disabled={isPending}
-                                defaultValue={job?.position || 1}
                                 min="1"
-                                className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black outline-none text-sm"
+                                className={`w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black outline-none text-sm ${errors.position ? 'border-red-500' : ''
+                                    }`}
                                 placeholder="1"
                             />
+                            {errors.position && (
+                                <p className="mt-1 text-xs text-red-600">{errors.position.message}</p>
+                            )}
                         </div>
 
                         {/* Job Status */}
@@ -322,9 +306,8 @@ const PostJob = () => {
                                 Job Status
                             </label>
                             <select
-                                name="status"
+                                {...register('status')}
                                 disabled={isPending}
-                                defaultValue={job?.status || 'open'}
                                 className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black outline-none text-sm"
                             >
                                 <option value="open">Open</option>
@@ -339,14 +322,14 @@ const PostJob = () => {
                                 type="button"
                                 onClick={() => navigate('/recruiter-dashboard')}
                                 disabled={isPending}
-                                className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded hover:bg-gray-50 transition text-sm"
+                                className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded hover:bg-gray-50 transition text-sm disabled:opacity-50"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
                                 disabled={isPending}
-                                className="flex-1 px-6 py-3 bg-black text-white font-medium rounded hover:bg-gray-800 transition flex items-center justify-center gap-2 text-sm"
+                                className="flex-1 px-6 py-3 bg-black text-white font-medium rounded hover:bg-gray-800 transition flex items-center justify-center gap-2 text-sm disabled:opacity-50"
                             >
                                 {isPending ? (
                                     <>
@@ -354,10 +337,7 @@ const PostJob = () => {
                                         {isEditMode ? 'Updating...' : 'Posting...'}
                                     </>
                                 ) : (
-                                    <>
-                                        {/* <Briefcase className="w-4 h-4" /> */}
-                                        {isEditMode ? 'Update Job' : 'Post Job'}
-                                    </>
+                                    <>{isEditMode ? 'Update Job' : 'Post Job'}</>
                                 )}
                             </button>
                         </div>

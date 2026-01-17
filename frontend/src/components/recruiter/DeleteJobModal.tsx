@@ -1,6 +1,5 @@
-import { useState } from 'react';
 import { AlertTriangle, X, Loader2 } from 'lucide-react';
-import { jobApi } from '../../api/jobApi';
+import { useDeleteJob } from '../../hooks/mutations/useJobMutations';
 
 type DeleteJobModalProps = {
     jobId: string;
@@ -10,25 +9,14 @@ type DeleteJobModalProps = {
 };
 
 const DeleteJobModal = ({ jobId, jobTitle, onSuccess, onCancel }: DeleteJobModalProps) => {
-    const [isDeleting, setIsDeleting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const { mutate, error, isPending } = useDeleteJob();
 
-    const handleDelete = async () => {
-        try {
-            setIsDeleting(true);
-            setError(null);
-            const data = await jobApi.deleteJob(jobId);
-
-            if (data.success) {
+    const handleDelete = () => {
+        mutate(jobId, {
+            onSuccess: () => {
                 onSuccess();
-            } else {
-                setError('Failed to delete job');
             }
-        } catch (err: any) {
-            setError(err.message || 'Failed to delete job. Please try again.');
-        } finally {
-            setIsDeleting(false);
-        }
+        });
     };
 
     return (
@@ -44,7 +32,7 @@ const DeleteJobModal = ({ jobId, jobTitle, onSuccess, onCancel }: DeleteJobModal
                     </div>
                     <button
                         onClick={onCancel}
-                        disabled={isDeleting}
+                        disabled={isPending}
                         className="p-2 hover:bg-white/20 rounded-lg transition text-white disabled:opacity-50"
                     >
                         <X className="w-5 h-5" />
@@ -55,7 +43,9 @@ const DeleteJobModal = ({ jobId, jobTitle, onSuccess, onCancel }: DeleteJobModal
                 <div className="p-6">
                     {error && (
                         <div className="mb-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
-                            <p className="text-red-700 text-sm font-medium">{error}</p>
+                            <p className="text-red-700 text-sm font-medium">
+                                {error?.message || 'Failed to delete job. Please try again.'}
+                            </p>
                         </div>
                     )}
 
@@ -74,17 +64,17 @@ const DeleteJobModal = ({ jobId, jobTitle, onSuccess, onCancel }: DeleteJobModal
                 <div className="flex gap-3 px-6 pb-6">
                     <button
                         onClick={onCancel}
-                        disabled={isDeleting}
+                        disabled={isPending}
                         className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all disabled:opacity-50"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleDelete}
-                        disabled={isDeleting}
+                        disabled={isPending}
                         className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-red-300 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0 flex items-center justify-center gap-2"
                     >
-                        {isDeleting ? (
+                        {isPending ? (
                             <>
                                 <Loader2 className="w-5 h-5 animate-spin" />
                                 Deleting...

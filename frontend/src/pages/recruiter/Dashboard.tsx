@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Briefcase, Loader2 } from 'lucide-react';
+import { Briefcase } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
-import { jobApi } from '../../api/jobApi';
+import { jobQueries } from '../../api/queries/jobQueries';
 import DeleteJobModal from '../../components/recruiter/DeleteJobModal';
 import JobCard from '../../components/JobCard';
+import LoadingSpinner from '../../components/LoadingSpinner';
 
 type Job = {
     _id: string;
@@ -21,43 +23,22 @@ type Job = {
     applications: string[];
 };
 
-const RecruiterDashboard = () => {
+const RecruiterDashboard: React.FC = () => {
     const navigate = useNavigate();
-    const [jobs, setJobs] = useState<Job[]>([]);
-    const [loading, setLoading] = useState(true);
     const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
     const { user } = useAuth();
 
-    const fetchJobs = async () => {
-        try {
-            setLoading(true);
-            const data = await jobApi.getRecruiterJobs();
-            if (data.success) {
-                setJobs(data.jobs);
-            }
-        } catch (error) {
-            console.error('Failed to fetch jobs:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchJobs();
-    }, []);
+    const { data: jobs = [], isLoading: loading } = useQuery(jobQueries.recruiter());
 
     const isProfileComplete = user?.profile?.company?.description && user?.profile?.company?.website;
 
     return (
         <div className="min-h-screen bg-gray-50 py-8">
             <div className="max-w-7xl mx-auto px-6">
-                {/* Header */}
                 <div className="mb-8">
                     <h1 className="text-3xl font-semibold text-gray-900">Recruiter Dashboard</h1>
                     <p className="text-gray-600 mt-1">Welcome back, {user?.fullname}</p>
                 </div>
-
-                {/* Profile Completion Banner */}
                 {!isProfileComplete && (
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 flex items-center justify-between">
                         <div>
@@ -72,12 +53,8 @@ const RecruiterDashboard = () => {
                         </button>
                     </div>
                 )}
-
-                {/* Jobs List */}
                 {loading ? (
-                    <div className="flex justify-center items-center py-20">
-                        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-                    </div>
+                    <LoadingSpinner />
                 ) : jobs.length === 0 ? (
                     <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
                         <Briefcase className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -96,7 +73,7 @@ const RecruiterDashboard = () => {
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        {jobs.map((job) => (
+                        {jobs.map((job: any) => (
                             <JobCard
                                 key={job._id}
                                 job={job}
@@ -108,13 +85,11 @@ const RecruiterDashboard = () => {
                     </div>
                 )}
 
-                {/* Delete Job Confirmation Modal */}
                 {jobToDelete && (
                     <DeleteJobModal
                         jobId={jobToDelete._id}
                         jobTitle={jobToDelete.title}
                         onSuccess={() => {
-                            setJobs(jobs.filter(job => job._id !== jobToDelete._id));
                             setJobToDelete(null);
                         }}
                         onCancel={() => setJobToDelete(null)}
