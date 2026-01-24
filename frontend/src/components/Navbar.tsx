@@ -1,13 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { Menu, X, User as UserIcon, LogOut, ChevronDown, Plus, Building2, Bookmark } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
 const Navbar = () => {
+    const location = useLocation();
     const [isOpen, setIsOpen] = useState(false);
     const [showDropdown, setShowDropdown] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const { user, logout } = useAuth();
+
+    // Helper function to check if link is active
+    const isActive = (path: string) => location.pathname === path;
 
     const toggleMenu = () => {
         setIsOpen(!isOpen);
@@ -46,16 +50,34 @@ const Navbar = () => {
                             <>
                                 {user.role === 'job_seeker' ? (
                                     <>
-                                        <Link to="/jobs" className="text-sm text-gray-700 hover:text-black font-medium transition">
+                                        <Link
+                                            to="/jobs"
+                                            className={`text-sm font-medium transition ${isActive('/jobs')
+                                                ? 'text-black border-b-2 border-black pb-1'
+                                                : 'text-gray-700 hover:text-black'
+                                                }`}
+                                        >
                                             Browse Jobs
                                         </Link>
-                                        <Link to="/job-seeker-dashboard" className="text-sm text-gray-700 hover:text-black font-medium transition">
+                                        <Link
+                                            to="/job-seeker-dashboard"
+                                            className={`text-sm font-medium transition ${isActive('/job-seeker-dashboard')
+                                                ? 'text-black border-b-2 border-black pb-1'
+                                                : 'text-gray-700 hover:text-black'
+                                                }`}
+                                        >
                                             My Applications
                                         </Link>
                                     </>
                                 ) : (
                                     <>
-                                        <Link to="/recruiter-dashboard" className="text-sm text-gray-700 hover:text-black font-medium transition">
+                                        <Link
+                                            to="/recruiter-dashboard"
+                                            className={`text-sm font-medium transition ${isActive('/recruiter-dashboard')
+                                                ? 'text-black border-b-2 border-black pb-1'
+                                                : 'text-gray-700 hover:text-black'
+                                                }`}
+                                        >
                                             My Jobs
                                         </Link>
                                         <Link to="/post-job" className="flex items-center gap-1.5 px-4 py-2 bg-black text-white text-sm font-medium rounded hover:bg-gray-800 transition">
@@ -180,10 +202,22 @@ const Navbar = () => {
 
                                 {user.role === 'job_seeker' ? (
                                     <>
-                                        <Link to="/jobs" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition">
+                                        <Link
+                                            to="/jobs"
+                                            className={`block px-3 py-2 text-sm rounded transition ${isActive('/jobs')
+                                                    ? 'bg-gray-900 text-white font-medium'
+                                                    : 'text-gray-700 hover:bg-gray-50'
+                                                }`}
+                                        >
                                             Browse Jobs
                                         </Link>
-                                        <Link to="/job-seeker-dashboard" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition">
+                                        <Link
+                                            to="/job-seeker-dashboard"
+                                            className={`block px-3 py-2 text-sm rounded transition ${isActive('/job-seeker-dashboard')
+                                                    ? 'bg-gray-900 text-white font-medium'
+                                                    : 'text-gray-700 hover:bg-gray-50'
+                                                }`}
+                                        >
                                             My Applications
                                         </Link>
                                         <Link to="/profile" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition">
@@ -195,7 +229,13 @@ const Navbar = () => {
                                     </>
                                 ) : (
                                     <>
-                                        <Link to="/recruiter-dashboard" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition">
+                                        <Link
+                                            to="/recruiter-dashboard"
+                                            className={`block px-3 py-2 text-sm rounded transition ${isActive('/recruiter-dashboard')
+                                                    ? 'bg-gray-900 text-white font-medium'
+                                                    : 'text-gray-700 hover:bg-gray-50'
+                                                }`}
+                                        >
                                             My Jobs
                                         </Link>
                                         <Link to="/post-job" className="flex items-center gap-2 px-3 py-2 bg-black text-white text-sm font-medium rounded">

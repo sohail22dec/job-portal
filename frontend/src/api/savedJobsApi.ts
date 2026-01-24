@@ -15,7 +15,7 @@ const handleResponse = async (response: Response) => {
 export const toggleSaveJob = async (jobId: string) => {
     const response = await fetch(`${API_BASE}/toggle/${jobId}`, {
         method: 'POST',
-        credentials: 'include',
+        credentials: 'include'
     });
     return handleResponse(response);
 };
@@ -23,8 +23,7 @@ export const toggleSaveJob = async (jobId: string) => {
 // Get all saved jobs
 export const getSavedJobs = async () => {
     const response = await fetch(`${API_BASE}`, {
-        method: 'GET',
-        credentials: 'include',
+        credentials: 'include'
     });
     return handleResponse(response);
 };
@@ -32,8 +31,7 @@ export const getSavedJobs = async () => {
 // Check if specific job is saved
 export const checkIfSaved = async (jobId: string) => {
     const response = await fetch(`${API_BASE}/check/${jobId}`, {
-        method: 'GET',
-        credentials: 'include',
+        credentials: 'include'
     });
     return handleResponse(response);
 };

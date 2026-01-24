@@ -58,12 +58,8 @@ export const register = asyncHandler(async (req, res) => {
 
     const newUser = await User.create(userData);
 
-    // Generate JWT token for auto-login after registration
-    const tokenData = {
-        userId: newUser._id
-    };
-
-    const token = jwt.sign(tokenData, process.env.SECRET_KEY, { expiresIn: '1d' });
+    // Generate JWT token with 1-day expiration
+    const token = jwt.sign({ userId: newUser._id }, process.env.SECRET_KEY, { expiresIn: '1d' });
 
     // Return user data without password
     const user = {
@@ -78,7 +74,7 @@ export const register = asyncHandler(async (req, res) => {
     return res
         .status(201)
         .cookie("token", token, {
-            maxAge: 1 * 24 * 60 * 60 * 1000,
+            maxAge: 1 * 24 * 60 * 60 * 1000, // 1 day
             httpOnly: true,
             sameSite: 'strict'
         })
@@ -109,12 +105,8 @@ export const login = asyncHandler(async (req, res) => {
         throw new Error("Invalid email or password");
     }
 
-    const tokenData = {
-        userId: user._id
-    };
-
-    // jwt.sign is synchronous, no need for await
-    const token = jwt.sign(tokenData, process.env.SECRET_KEY, { expiresIn: '1d' });
+    // Generate JWT token with 1-day expiration
+    const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, { expiresIn: '1d' });
 
     // Prepare user data (exclude password)
     const userData = {
@@ -122,14 +114,14 @@ export const login = asyncHandler(async (req, res) => {
         fullname: user.fullname,
         email: user.email,
         phoneNumber: user.phoneNumber,
-        role: user.role,  // Role comes from database!
+        role: user.role,
         profile: user.profile
     };
 
     return res
         .status(200)
         .cookie("token", token, {
-            maxAge: 1 * 24 * 60 * 60 * 1000,
+            maxAge: 1 * 24 * 60 * 60 * 1000, // 1 day
             httpOnly: true,
             sameSite: 'strict'
         })
@@ -142,7 +134,11 @@ export const login = asyncHandler(async (req, res) => {
 export const logout = asyncHandler(async (req, res) => {
     return res
         .status(200)
-        .cookie("token", "", { maxAge: 0 })
+        .cookie("token", "", {
+            maxAge: 0,
+            httpOnly: true,
+            sameSite: 'strict'
+        })
         .json({
             message: "Logged out successfully.",
             success: true
@@ -150,7 +146,7 @@ export const logout = asyncHandler(async (req, res) => {
 });
 
 export const updateProfile = asyncHandler(async (req, res) => {
-    const { fullname, email, phoneNumber, bio, skills } = req.body;
+    const { fullname, email, phoneNumber, bio, skills, experience, education } = req.body;
 
     // req.userId comes from isAuthenticated middleware
     const userId = req.userId;
@@ -162,12 +158,18 @@ export const updateProfile = asyncHandler(async (req, res) => {
         throw new Error("User not found");
     }
 
-    // Update user fields
+    // Update basic user fields
     if (fullname) user.fullname = fullname;
     if (email) user.email = email;
     if (phoneNumber) user.phoneNumber = phoneNumber;
-    if (bio) user.profile.bio = bio;
-    if (skills) user.profile.skills = skills;
+
+    // Update job seeker profile fields (only for job_seeker role)
+    if (user.role === 'job_seeker') {
+        if (bio !== undefined) user.profile.bio = bio;
+        if (skills !== undefined) user.profile.skills = skills;
+        if (experience !== undefined) user.profile.experience = experience;
+        if (education !== undefined) user.profile.education = education;
+    }
 
     await user.save();
 
@@ -244,3 +246,4 @@ export const getMe = asyncHandler(async (req, res) => {
         user
     });
 });
+

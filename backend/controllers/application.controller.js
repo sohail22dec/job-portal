@@ -5,22 +5,24 @@ import { Job } from '../models/job.model.js';
 // Apply for a job
 export const applyForJob = asyncHandler(async (req, res) => {
     const { jobId } = req.params;
-    const { coverLetter, resume } = req.body;
+    const { coverLetter } = req.body;
     const applicantId = req.userId;
+
+    // Get resume from file upload
+    const resume = req.file ? req.file.path : null;
+
+    if (!resume) {
+        return res.status(400).json({
+            message: 'Resume is required (PDF format)',
+            success: false
+        });
+    }
 
     // Check if job exists
     const job = await Job.findById(jobId);
     if (!job) {
         return res.status(404).json({
             message: 'Job not found',
-            success: false
-        });
-    }
-
-    // Check if job is open
-    if (job.status !== 'open') {
-        return res.status(400).json({
-            message: 'This job is no longer accepting applications',
             success: false
         });
     }
@@ -46,14 +48,28 @@ export const applyForJob = asyncHandler(async (req, res) => {
         resume
     });
 
-    // Add application to job's applications array
-    job.applications.push(application._id);
-    await job.save();
-
     return res.status(201).json({
         message: 'Application submitted successfully',
         success: true,
         application
+    });
+});
+
+// Check if user has applied to a job
+export const checkApplicationStatus = asyncHandler(async (req, res) => {
+    const { jobId } = req.params;
+    const applicantId = req.userId;
+
+    const application = await Application.findOne({
+        job: jobId,
+        applicant: applicantId
+    });
+
+    return res.status(200).json({
+        hasApplied: !!application,
+        applicationId: application?._id,
+        status: application?.status,
+        success: true
     });
 });
 
@@ -73,39 +89,6 @@ export const getMyApplications = asyncHandler(async (req, res) => {
 
     return res.status(200).json({
         applications,
-        success: true
-    });
-});
-
-// Get single application details
-export const getApplicationById = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const userId = req.userId;
-
-    const application = await Application.findById(id)
-        .populate('job')
-        .populate('applicant', 'fullname email phoneNumber');
-
-    if (!application) {
-        return res.status(404).json({
-            message: 'Application not found',
-            success: false
-        });
-    }
-
-    // Check authorization - only applicant or job creator can view
-    const isApplicant = application.applicant._id.toString() === userId;
-    const isRecruiter = application.job.createdBy.toString() === userId;
-
-    if (!isApplicant && !isRecruiter) {
-        return res.status(403).json({
-            message: 'Not authorized to view this application',
-            success: false
-        });
-    }
-
-    return res.status(200).json({
-        application,
         success: true
     });
 });
@@ -156,7 +139,9 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
         });
     }
 
-    const application = await Application.findById(id).populate('job');
+    const application = await Application.findById(id)
+        .populate('job')
+        .populate('applicant', 'fullname email phoneNumber');
 
     if (!application) {
         return res.status(404).json({

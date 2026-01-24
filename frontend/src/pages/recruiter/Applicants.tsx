@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { ArrowLeft, Mail, Phone, FileText, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { applicationQueries } from '../../api/queries/applicationQueries';
 import { jobQueries } from '../../api/queries/jobQueries';
 import { useUpdateApplicationStatus } from '../../hooks/mutations/useApplicationMutations';
-
+import { ApplicationCard } from '../../components/job-seeker/ApplicationCard';
 
 const Applicants = () => {
     const { jobId } = useParams<{ jobId: string }>();
@@ -17,27 +17,14 @@ const Applicants = () => {
     const job = jobData?.job;
 
     // Fetch applications for this job
-    const { data: applicationsData, isLoading: loadingApps } = useQuery(applicationQueries.byJob(jobId || ''));
-    const applications = applicationsData?.success ? applicationsData.applications : [];
+    const { data: applications = [], isLoading: loadingApps } = useQuery(applicationQueries.byJob(jobId || ''));
 
     // Update application status mutation
-    const updateStatusMutation = useUpdateApplicationStatus();
+    const { mutate, isPending } = useUpdateApplicationStatus();
 
     const loading = loadingJob || loadingApps;
 
-    const updateStatus = (applicationId: string, newStatus: string) => {
-        updateStatusMutation.mutate({ applicationId, status: newStatus });
-    };
-
-    const getStatusBadge = (status: string) => {
-        const badges = {
-            pending: { text: 'Pending', class: 'bg-gray-100 text-gray-800' },
-            reviewing: { text: 'Reviewing', class: 'bg-blue-100 text-blue-800' },
-            accepted: { text: 'Accepted', class: 'bg-green-100 text-green-800' },
-            rejected: { text: 'Rejected', class: 'bg-red-100 text-red-800' }
-        };
-        return badges[status as keyof typeof badges] || badges.pending;
-    };
+    const updateStatus = (applicationId: string, newStatus: string) => mutate({ applicationId, status: newStatus });
 
     const filteredApplications = filterStatus === 'all'
         ? applications
@@ -93,99 +80,14 @@ const Applicants = () => {
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        {filteredApplications.map((app: any) => {
-                            const badge = getStatusBadge(app.status);
-                            return (
-                                <div key={app._id} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                                    {/* Header */}
-                                    <div className="px-6 py-4 border-b border-gray-100">
-                                        <div className="flex items-start justify-between">
-                                            <div>
-                                                <h3 className="text-lg font-semibold text-gray-900">{app.applicant.fullname}</h3>
-                                                <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                                                    <a href={`mailto:${app.applicant.email}`} className="flex items-center gap-1 hover:text-black">
-                                                        <Mail className="w-4 h-4" />
-                                                        {app.applicant.email}
-                                                    </a>
-                                                    {app.applicant.phoneNumber && (
-                                                        <div className="flex items-center gap-1">
-                                                            <Phone className="w-4 h-4" />
-                                                            {app.applicant.phoneNumber}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <span className={`px-3 py-1 text-xs font-medium rounded ${badge.class}`}>
-                                                {badge.text}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* Content */}
-                                    <div className="px-6 py-4">
-                                        {/* Cover Letter */}
-                                        {app.coverLetter && (
-                                            <div className="mb-4">
-                                                <h4 className="text-sm font-medium text-gray-900 mb-2">Cover Letter</h4>
-                                                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                                                    {app.coverLetter}
-                                                </p>
-                                            </div>
-                                        )}
-
-                                        {/* Resume */}
-                                        {app.resume && (
-                                            <div className="mb-4">
-                                                <a
-                                                    href={app.resume}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
-                                                >
-                                                    <FileText className="w-4 h-4" />
-                                                    View Resume
-                                                </a>
-                                            </div>
-                                        )}
-
-                                        <div className="text-xs text-gray-500 mb-4">
-                                            Applied {new Date(app.createdAt).toLocaleDateString()}
-                                        </div>
-
-                                        {/* Actions */}
-                                        <div className="flex gap-2">
-                                            {app.status !== 'reviewing' && (
-                                                <button
-                                                    onClick={() => updateStatus(app._id, 'reviewing')}
-                                                    disabled={updateStatusMutation.isPending}
-                                                    className="px-4 py-2 text-sm bg-black text-white rounded hover:bg-gray-800 disabled:opacity-50"
-                                                >
-                                                    {updateStatusMutation.isPending ? 'Updating...' : 'Review'}
-                                                </button>
-                                            )}
-                                            {app.status !== 'accepted' && (
-                                                <button
-                                                    onClick={() => updateStatus(app._id, 'accepted')}
-                                                    disabled={updateStatusMutation.isPending}
-                                                    className="px-4 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-                                                >
-                                                    {updateStatusMutation.isPending ? 'Updating...' : 'Accept'}
-                                                </button>
-                                            )}
-                                            {app.status !== 'rejected' && (
-                                                <button
-                                                    onClick={() => updateStatus(app._id, 'rejected')}
-                                                    disabled={updateStatusMutation.isPending}
-                                                    className="px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
-                                                >
-                                                    {updateStatusMutation.isPending ? 'Updating...' : 'Reject'}
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                        {filteredApplications.map((app: any) => (
+                            <ApplicationCard
+                                key={app._id}
+                                application={app}
+                                isPending={isPending}
+                                updateStatus={updateStatus}
+                            />
+                        ))}
                     </div>
                 )}
             </div>

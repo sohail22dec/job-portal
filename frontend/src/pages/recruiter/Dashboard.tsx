@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Briefcase } from 'lucide-react';
+import { Briefcase, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
 import { jobQueries } from '../../api/queries/jobQueries';
 import DeleteJobModal from '../../components/recruiter/DeleteJobModal';
 import JobCard from '../../components/JobCard';
-import LoadingSpinner from '../../components/LoadingSpinner';
 
 type Job = {
     _id: string;
@@ -20,7 +19,7 @@ type Job = {
     position: number;
     status: 'open' | 'closed';
     createdAt: string;
-    applications: string[];
+    applicationsCount: number;
 };
 
 const RecruiterDashboard: React.FC = () => {
@@ -54,7 +53,9 @@ const RecruiterDashboard: React.FC = () => {
                     </div>
                 )}
                 {loading ? (
-                    <LoadingSpinner />
+                    <div className="flex items-center justify-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                    </div>
                 ) : jobs.length === 0 ? (
                     <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
                         <Briefcase className="w-12 h-12 text-gray-400 mx-auto mb-4" />

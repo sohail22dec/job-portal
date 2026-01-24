@@ -1,20 +1,22 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, Loader2, FileText, Building2 } from 'lucide-react';
+import { ArrowLeft, Loader2, FileText, Building2, Upload, File as FileIcon, Sparkles } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { useApplyToJob } from '../../hooks/mutations/useApplicationMutations';
 import { jobQueries } from '../../api/queries/jobQueries';
 import { applicationSchema, type ApplicationFormData } from '../../schemas/applicationSchemas';
+import AICoverLetterGenerator from '../../components/job-seeker/AICoverLetterGenerator';
 
 const ApplyJob = () => {
     const { jobId } = useParams<{ jobId: string }>();
     const navigate = useNavigate();
     const { user, loading } = useAuth();
     const { showToast } = useToast();
+    const [showAIGenerator, setShowAIGenerator] = useState(false);
 
     // Fetch job details using TanStack Query
     const { data: jobData, isLoading } = useQuery(jobQueries.detail(jobId || ''));
@@ -24,14 +26,16 @@ const ApplyJob = () => {
     const applyMutation = useApplyToJob();
 
     // Form setup
-    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<ApplicationFormData>({
+    const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<ApplicationFormData>({
         resolver: zodResolver(applicationSchema),
         mode: 'onBlur',
         defaultValues: {
             coverLetter: '',
-            resume: '',
         },
     });
+
+    const resumeFiles = watch('resume');
+    const resumeFile = resumeFiles && resumeFiles.length > 0 ? resumeFiles[0] : null;
 
     // Check authentication and role
     useEffect(() => {
@@ -49,14 +53,25 @@ const ApplyJob = () => {
         }
     }, [user, loading, navigate, showToast]);
 
+    const handleAIGenerate = (coverLetter: string) => {
+        setValue('coverLetter', coverLetter);
+        showToast('Cover letter generated successfully! Review and edit as needed.', 'success');
+    };
+
     const onSubmit = (data: ApplicationFormData) => {
         if (!jobId) return;
+
+        // data.resume is a FileList
+        if (!data.resume || data.resume.length === 0) {
+            showToast('Please upload a resume', 'error');
+            return;
+        }
 
         applyMutation.mutate({
             jobId,
             applicationData: {
                 coverLetter: data.coverLetter,
-                resume: data.resume || undefined,
+                resume: data.resume[0],
             },
         });
     };
@@ -137,9 +152,19 @@ const ApplyJob = () => {
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                         {/* Cover Letter */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Cover Letter <span className="text-red-500">*</span>
-                            </label>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="block text-sm font-medium text-gray-700">
+                                    Cover Letter <span className="text-red-500">*</span>
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAIGenerator(true)}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                                >
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                    Generate with AI
+                                </button>
+                            </div>
                             <textarea
                                 {...register('coverLetter')}
                                 disabled={isPending}
@@ -156,25 +181,51 @@ const ApplyJob = () => {
                             </p>
                         </div>
 
-                        {/* Resume Link */}
+                        {/* Resume Upload */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Resume Link (Optional)
+                                Resume (PDF) <span className="text-red-500">*</span>
                             </label>
-                            <input
-                                {...register('resume')}
-                                type="url"
-                                disabled={isPending}
-                                className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black outline-none transition disabled:bg-gray-50 disabled:text-gray-500 ${errors.resume ? 'border-red-500' : ''
-                                    }`}
-                                placeholder="https://drive.google.com/your-resume.pdf"
-                            />
+
+                            <div className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center transition ${errors.resume ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-black bg-gray-50'
+                                }`}>
+                                <input
+                                    {...register('resume')}
+                                    type="file"
+                                    id="resume-upload"
+                                    accept=".pdf"
+                                    disabled={isPending}
+                                    className="hidden"
+                                />
+
+                                {resumeFile ? (
+                                    <div className="flex items-center gap-3 text-gray-700">
+                                        <FileIcon className="w-8 h-8 text-black" />
+                                        <div className="text-left">
+                                            <p className="font-medium">{resumeFile.name}</p>
+                                            <p className="text-xs text-gray-500">{(resumeFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                                        </div>
+                                        <label
+                                            htmlFor="resume-upload"
+                                            className="ml-4 text-sm font-semibold hover:underline cursor-pointer"
+                                        >
+                                            Change
+                                        </label>
+                                    </div>
+                                ) : (
+                                    <label htmlFor="resume-upload" className="cursor-pointer flex flex-col items-center">
+                                        <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                                        <span className="text-sm font-medium text-gray-900">Click to upload resume</span>
+                                        <span className="text-xs text-gray-500 mt-1">PDF only (Max 5MB)</span>
+                                    </label>
+                                )}
+                            </div>
+
                             {errors.resume && (
-                                <p className="mt-1 text-xs text-red-600">{errors.resume.message}</p>
+                                <p className="mt-1 text-xs text-red-600">
+                                    {errors.resume.message as string}
+                                </p>
                             )}
-                            <p className="mt-1 text-sm text-gray-500">
-                                Link to your resume (Google Drive, Dropbox, etc.)
-                            </p>
                         </div>
 
                         {/* Actions */}
@@ -204,6 +255,16 @@ const ApplyJob = () => {
                         </div>
                     </form>
                 </div>
+
+                {/* AI Cover Letter Generator Modal */}
+                <AICoverLetterGenerator
+                    isOpen={showAIGenerator}
+                    onClose={() => setShowAIGenerator(false)}
+                    onGenerate={handleAIGenerate}
+                    jobTitle={job.title}
+                    companyName={job.createdBy.profile?.company?.name || 'Company'}
+                    jobDescription={job.description}
+                />
             </div>
         </div>
     );

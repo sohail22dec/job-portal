@@ -10,6 +10,7 @@ import JobsList from "./pages/job-seeker/JobsList";
 import JobDetails from "./pages/shared/JobDetails";
 import SavedJobs from "./pages/job-seeker/SavedJobs";
 import ApplyJob from "./pages/job-seeker/ApplyJob";
+import ProfilePage from "./components/job-seeker/ProfilePage";
 import Applicants from "./pages/recruiter/Applicants";
 import PostJob from "./pages/recruiter/PostJob";
 import CompanyProfile from "./pages/recruiter/CompanyProfile";
@@ -82,9 +83,13 @@ const appRouter = createBrowserRouter([
         element: <SavedJobs />,
       },
       {
+        path: "/profile",
+        element: <ProfilePage />,
+      },
+      {
         path: "/company-profile",
         element: <CompanyProfile />,
-      }
+      },
     ]
   },
   {

@@ -24,19 +24,44 @@ const userSchema = new mongoose.Schema({
         required: false
     },
     profile: {
-        bio: { type: String },
-        skills: [{ type: String }],
-        resume: { type: String },  // URL to resume file (for job seekers)
-        resumeOriginalName: { type: String },
         profilePhoto: {
             type: String,
             default: ""
         },
-        company: {  // For recruiters
+        // Job Seeker profile fields
+        bio: {
+            type: String,
+            default: ""
+        },
+        skills: [{
+            type: String
+        }],
+        resume: {
+            type: String,
+            default: ""
+        },
+        experience: [{
+            company: { type: String, required: true },
+            title: { type: String, required: true },
+            startDate: { type: String, required: true },
+            endDate: { type: String },
+            currentlyWorking: { type: Boolean, default: false },
+            description: { type: String }
+        }],
+        education: [{
+            institute: { type: String, required: true },
+            degree: { type: String, required: true },
+            fieldOfStudy: { type: String },
+            startYear: { type: String, required: true },
+            endYear: { type: String }
+        }],
+        // Company info for recruiters
+        company: {
             name: { type: String },
             description: { type: String },
             website: { type: String },
-            logo: { type: String }  // URL to company logo
+            logo: { type: String },
+            address: { type: String }
         }
     },
     savedJobs: [{

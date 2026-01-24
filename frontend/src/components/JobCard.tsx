@@ -1,4 +1,4 @@
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { MapPin, IndianRupee, Building2, Users, Edit, Trash2, Clock } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
@@ -14,7 +14,7 @@ type Job = {
     position: number;
     status: 'open' | 'closed';
     createdAt: string;
-    applications: string[];
+    applicationsCount: number;
     createdBy?: {
         profile?: {
             company?: {
@@ -34,10 +34,18 @@ type JobCardProps = {
 
 const JobCard = ({ job, variant = 'seeker', onEdit, onDelete }: JobCardProps) => {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const isRecruiterView = variant === 'recruiter';
 
+    const handleCardClick = () => {
+        navigate(`/job/${job._id}`);
+    };
+
     return (
-        <Link to={`/job/${job._id}`} className="block bg-white border border-gray-200 rounded-lg p-5 hover:border-gray-300 transition">
+        <div
+            onClick={handleCardClick}
+            className="block bg-white border border-gray-200 rounded-lg p-5 hover:border-gray-300 transition cursor-pointer"
+        >
             <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
                     {/* Logo and Title */}
@@ -120,7 +128,7 @@ const JobCard = ({ job, variant = 'seeker', onEdit, onDelete }: JobCardProps) =>
                 {isRecruiterView && (
                     <div className="flex items-center gap-1">
                         <Users className="w-3.5 h-3.5" />
-                        <span>{job.applications?.length || 0} applicants</span>
+                        <span>{job.applicationsCount || 0} applicants</span>
                     </div>
                 )}
             </div>
@@ -138,11 +146,11 @@ const JobCard = ({ job, variant = 'seeker', onEdit, onDelete }: JobCardProps) =>
                             onClick={(e) => e.stopPropagation()}
                         >
                             <Users className="w-4 h-4" />
-                            View Applicants ({job.applications?.length || 0})
+                            View Applicants ({job.applicationsCount || 0})
                         </Link>)}
                 </div>
             </div>
-        </Link>
+        </div>
     );
 };
 

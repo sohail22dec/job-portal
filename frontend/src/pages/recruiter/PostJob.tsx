@@ -2,14 +2,14 @@ import { useState, useEffect, type KeyboardEvent } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Sparkles } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { useCreateJob, useUpdateJob } from '../../hooks/mutations/useJobMutations';
 import { jobQueries } from '../../api/queries/jobQueries';
 import { jobSchema, type JobFormData } from '../../schemas/jobSchemas';
-import LoadingSpinner from '../../components/LoadingSpinner';
+import AIJobGenerator from '../../components/recruiter/AIJobGenerator';
 
 const PostJob = () => {
     const { jobId } = useParams<{ jobId?: string }>();
@@ -19,6 +19,7 @@ const PostJob = () => {
     const { showToast } = useToast();
 
     const [requirements, setRequirements] = useState('');
+    const [showAIGenerator, setShowAIGenerator] = useState(false);
 
     // Fetch job data for editing
     const { data: jobData, isLoading: loadingJob } = useQuery(jobQueries.detail(jobId || ''));
@@ -115,7 +116,27 @@ const PostJob = () => {
         }
     };
 
-    if (loadingJob && isEditMode) return <LoadingSpinner />
+    const handleAIGenerate = (jobTitle: string, description: string, requirementsList: string[]) => {
+        // Auto-fill job title
+        setValue('title', jobTitle);
+
+        // Auto-fill description
+        setValue('description', description);
+
+        // Auto-fill requirements
+        const formattedReqs = requirementsList.map(r => `• ${r}`).join('\n');
+        setRequirements(formattedReqs);
+
+        showToast('Content generated successfully! Review and edit as needed.', 'success');
+    };
+
+    if (loadingJob && isEditMode) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+            </div>
+        );
+    }
 
     const isPending = isSubmitting || createMutation.isPending || updateMutation.isPending;
 
@@ -145,6 +166,31 @@ const PostJob = () => {
                     {isEditMode && (
                         <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded text-blue-700 text-sm">
                             <strong>Note:</strong> Title, Salary, Location, Job Type, and Experience cannot be changed to protect applicants' interests.
+                        </div>
+                    )}
+
+                    {/* AI Generator Button - Only show when creating new job */}
+                    {!isEditMode && (
+                        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-sm font-semibold text-gray-900 mb-1 flex items-center gap-2">
+                                        <Sparkles className="w-4 h-4 text-blue-600" />
+                                        AI-Powered Job Description Generator
+                                    </h3>
+                                    <p className="text-xs text-gray-600">
+                                        Let AI create a professional job description for you in seconds
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAIGenerator(true)}
+                                    className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition flex items-center gap-2"
+                                >
+                                    <Sparkles className="w-4 h-4" />
+                                    Generate with AI
+                                </button>
+                            </div>
                         </div>
                     )}
 
@@ -343,6 +389,14 @@ const PostJob = () => {
                         </div>
                     </form>
                 </div>
+
+                {/* AI Job Generator Modal */}
+                <AIJobGenerator
+                    isOpen={showAIGenerator}
+                    onClose={() => setShowAIGenerator(false)}
+                    onGenerate={handleAIGenerate}
+                    companyDescription={user?.profile?.company?.description}
+                />
             </div>
         </div>
     );

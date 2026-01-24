@@ -58,6 +58,7 @@ const Login = () => {
                             <input
                                 type="email"
                                 placeholder="you@example.com"
+                                autoComplete="email"
                                 {...register('email')}
                                 className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black outline-none text-sm"
                             />
@@ -74,8 +75,9 @@ const Login = () => {
                                 <input
                                     type={showPassword ? 'text' : 'password'}
                                     placeholder="••••••••"
+                                    autoComplete="current-password"
                                     {...register('password')}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black outline-none text-sm"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black outline-none text-sm [&::-ms-reveal]:hidden"
                                 />
                                 <button
                                     type="button"

@@ -5,6 +5,7 @@ type User = {
     _id: string;
     fullname: string;
     email: string;
+    phoneNumber?: string;
     role: 'job_seeker' | 'recruiter';
     profile?: any;
 };

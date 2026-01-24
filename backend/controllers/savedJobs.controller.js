@@ -14,8 +14,7 @@ export const toggleSaveJob = asyncHandler(async (req, res) => {
     }
 
     // Check if job is already saved
-    const jobIndex = user.savedJobs.indexOf(jobId);
-
+    const jobIndex = user.savedJobs.findIndex(id => id.toString() === jobId);
     if (jobIndex > -1) {
         // Job is saved, so unsave it
         user.savedJobs.splice(jobIndex, 1);

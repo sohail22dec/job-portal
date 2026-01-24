@@ -1,4 +1,5 @@
 import asyncHandler from 'express-async-handler';
+import mongoose from 'mongoose';
 import { Job } from '../models/job.model.js';
 
 // POST /api/v1/job/post - Create a new job
@@ -84,8 +85,35 @@ export const getJobById = asyncHandler(async (req, res) => {
 export const getRecruiterJobs = asyncHandler(async (req, res) => {
     const recruiterId = req.userId;
 
-    const jobs = await Job.find({ createdBy: recruiterId })
-        .sort({ createdAt: -1 });
+    const jobs = await Job.aggregate([
+        // Match jobs created by this recruiter (convert string to ObjectId)
+        {
+            $match: {
+                createdBy: new mongoose.Types.ObjectId(recruiterId)
+            }
+        },
+        // Lookup applications for each job
+        {
+            $lookup: {
+                from: 'applications',
+                localField: '_id',
+                foreignField: 'job',
+                as: 'applicationsList'
+            }
+        },
+        // Add applicationsCount field
+        {
+            $addFields: {
+                applicationsCount: { $size: '$applicationsList' }
+            }
+        },
+        // Remove the full applications list (we only need the count)
+        {
+            $project: { applicationsList: 0 }
+        },
+        // Sort by most recent
+        { $sort: { createdAt: -1 } }
+    ]);
 
     if (!jobs || jobs.length === 0) {
         return res.status(404).json({

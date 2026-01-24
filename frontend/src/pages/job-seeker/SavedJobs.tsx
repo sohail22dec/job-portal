@@ -2,7 +2,7 @@ import { useNavigate, Link } from 'react-router';
 import { Loader2, Bookmark, MapPin, IndianRupee, Clock, Building2, ArrowLeft } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { savedJobQueries } from '../../api/queries/savedJobQueries';
-import { useToggleSaveJob } from '../../hooks/mutations/useSavedJobMutations';
+import { useToggleSaveJob } from '../../hooks/mutations/useSavedJobsMutations';
 import { useToast } from '../../hooks/useToast';
 
 

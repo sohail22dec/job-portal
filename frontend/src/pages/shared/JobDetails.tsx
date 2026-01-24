@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { jobQueries } from '../../api/queries/jobQueries';
 import { applicationQueries } from '../../api/queries/applicationQueries';
 import { savedJobQueries } from '../../api/queries/savedJobQueries';
-import { useToggleSaveJob } from '../../hooks/mutations/useSavedJobMutations';
+import { useToggleSaveJob } from '../../hooks/mutations/useSavedJobsMutations';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 

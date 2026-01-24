@@ -10,13 +10,14 @@ export const applicationQueries = {
 
     status: (jobId: string) => queryOptions({
         queryKey: ['applications', 'status', jobId] as const,
-        queryFn: () => applicationApi.getApplicationById(jobId).then(data => ({ success: true, hasApplied: !!data })),
+        queryFn: () => applicationApi.checkApplicationStatus(jobId),
         enabled: !!jobId,
     }),
 
     byJob: (jobId: string) => queryOptions({
         queryKey: ['applications', 'byJob', jobId] as const,
         queryFn: () => applicationApi.getJobApplicants(jobId),
+        select: (data) => data.success ? data.applications : [],
         enabled: !!jobId,
     }),
 };
