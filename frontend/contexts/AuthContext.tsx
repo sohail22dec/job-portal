@@ -124,13 +124,20 @@ export const AuthContextProvider = ({ children }: AuthContextProviderProps) => {
     // Logout function
     const logout = async () => {
         try {
-            await fetch(`${API_URL}/logout`, {
+            const response = await fetch(`${API_URL}/logout`, {
                 method: 'GET',
                 credentials: 'include',
             });
+
+            // Wait for response to ensure cookie is cleared
+            await response.json();
+
+            // Clear user state
             setUser(null);
         } catch (error) {
             console.error('Logout failed:', error);
+            // Still clear user state even if API call fails
+            setUser(null);
         }
     };
 

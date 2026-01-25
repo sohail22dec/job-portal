@@ -15,6 +15,7 @@ import Applicants from "./pages/recruiter/Applicants";
 import PostJob from "./pages/recruiter/PostJob";
 import CompanyProfile from "./pages/recruiter/CompanyProfile";
 import ErrorPage from "./pages/shared/ErrorPage";
+import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthContextProvider } from "../contexts/AuthContext";
 import { ToastProvider } from "../contexts/ToastContext";
 import Toast from "./components/Toast";
@@ -44,15 +45,27 @@ const appRouter = createBrowserRouter([
       },
       {
         path: "/dashboard",
-        element: <Dashboard />,
+        element: (
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "/recruiter-dashboard",
-        element: <RecruiterDashboard />,
+        element: (
+          <ProtectedRoute requiredRole="recruiter">
+            <RecruiterDashboard />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "/job-seeker-dashboard",
-        element: <JobSeekerDashboard />,
+        element: (
+          <ProtectedRoute requiredRole="jobseeker">
+            <JobSeekerDashboard />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "/jobs",
@@ -64,31 +77,59 @@ const appRouter = createBrowserRouter([
       },
       {
         path: "/job/:jobId/apply",
-        element: <ApplyJob />,
+        element: (
+          <ProtectedRoute requiredRole="jobseeker">
+            <ApplyJob />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "/job/:jobId/applicants",
-        element: <Applicants />,
+        element: (
+          <ProtectedRoute requiredRole="recruiter">
+            <Applicants />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "/post-job",
-        element: <PostJob />,
+        element: (
+          <ProtectedRoute requiredRole="recruiter">
+            <PostJob />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "/edit-job/:jobId",
-        element: <PostJob />,
+        element: (
+          <ProtectedRoute requiredRole="recruiter">
+            <PostJob />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "/saved-jobs",
-        element: <SavedJobs />,
+        element: (
+          <ProtectedRoute requiredRole="jobseeker">
+            <SavedJobs />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "/profile",
-        element: <ProfilePage />,
+        element: (
+          <ProtectedRoute requiredRole="jobseeker">
+            <ProfilePage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "/company-profile",
-        element: <CompanyProfile />,
+        element: (
+          <ProtectedRoute requiredRole="recruiter">
+            <CompanyProfile />
+          </ProtectedRoute>
+        ),
       },
     ]
   },
@@ -116,3 +157,4 @@ function App() {
 }
 
 export default App;
+

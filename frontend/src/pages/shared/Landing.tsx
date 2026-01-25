@@ -1,7 +1,14 @@
 import { useEffect } from 'react';
-import { Link, useNavigate } from 'react-router';
-import { ArrowRight, Search, Briefcase, Star } from 'lucide-react';
+import { useNavigate, Link } from 'react-router';
+import { Rocket, Github, Twitter, Linkedin, Mail } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import HeroSection from '../../components/landing/HeroSection';
+import FeaturesSection from '../../components/landing/FeaturesSection';
+import FeaturedJobsSection from '../../components/landing/FeaturedJobsSection';
+import StatsSection from '../../components/landing/StatsSection';
+import HowItWorksSection from '../../components/landing/HowItWorksSection';
+import TestimonialsSection from '../../components/landing/TestimonialsSection';
+import CTASection from '../../components/landing/CTASection';
 
 const LandingPage = () => {
     const { user } = useAuth();
@@ -13,83 +20,138 @@ const LandingPage = () => {
             navigate('/dashboard');
         }
     }, [user, navigate]);
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-            {/* Hero Section */}
-            <section className="relative pt-20 pb-32 px-4 sm:px-6 lg:px-8 overflow-hidden">
-                {/* Background decorations */}
-                <div className="absolute top-20 right-10 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-                <div className="absolute top-40 left-10 w-72 h-72 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-                <div className="absolute bottom-20 left-1/2 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
-
-                <div className="max-w-7xl mx-auto relative">
-                    <div className="text-center">
-                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-full mb-8 font-medium text-sm">
-                            <Star className="w-4 h-4 fill-current" />
-                            <span>Trusted by 10,000+ professionals</span>
-                        </div>
-
-                        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight">
-                            Find Your <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Dream Job</span>
-                            <br />
-                            Or Hire <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Top Talent</span>
-                        </h1>
-
-                        <p className="text-xl text-gray-600 mb-10 max-w-3xl mx-auto leading-relaxed">
-                            Connect with opportunities that match your skills. Whether you're looking for your next role or the perfect candidate, we've got you covered.
-                        </p>
-
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-                            <Link
-                                to="/signup"
-                                className="group px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-2xl hover:shadow-blue-300 transition-all duration-300 hover:-translate-y-1 flex items-center gap-2">
-                                Get Started Free
-                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                            </Link>
-                            <Link
-                                to="/jobs"
-                                className="px-8 py-4 bg-white text-gray-900 font-semibold rounded-xl border-2 border-gray-200 hover:border-blue-300 hover:shadow-xl transition-all duration-300 flex items-center gap-2">
-                                <Search className="w-5 h-5" />
-                                Browse Jobs
-                            </Link>
-                        </div>
-
-                        {/* Stats */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
-                            <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-gray-100">
-                                <div className="text-3xl font-bold text-blue-600 mb-1">10K+</div>
-                                <div className="text-gray-600 text-sm">Active Jobs</div>
-                            </div>
-                            <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-gray-100">
-                                <div className="text-3xl font-bold text-indigo-600 mb-1">50K+</div>
-                                <div className="text-gray-600 text-sm">Job Seekers</div>
-                            </div>
-                            <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-gray-100">
-                                <div className="text-3xl font-bold text-purple-600 mb-1">2K+</div>
-                                <div className="text-gray-600 text-sm">Companies</div>
-                            </div>
-                            <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-gray-100">
-                                <div className="text-3xl font-bold text-pink-600 mb-1">95%</div>
-                                <div className="text-gray-600 text-sm">Success Rate</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            <HeroSection />
+            <FeaturesSection />
+            <FeaturedJobsSection />
+            <StatsSection />
+            <HowItWorksSection />
+            <TestimonialsSection />
+            <CTASection />
 
             {/* Footer */}
-            <footer className="bg-gray-900 text-gray-300 py-12 px-4 sm:px-6 lg:px-8">
+            <footer className="bg-gray-900 text-gray-300 py-16 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-7xl mx-auto">
-                    <div className="flex flex-col md:flex-row justify-between items-center">
-                        <div className="flex items-center gap-2 mb-4 md:mb-0">
-                            <div className="p-2 bg-blue-600 rounded-lg">
-                                <Briefcase className="h-6 w-6 text-white" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+                        {/* Brand Section */}
+                        <div className="lg:col-span-1">
+                            <div className="flex items-center gap-2 mb-4">
+                                <div className="p-2 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg">
+                                    <Rocket className="h-6 w-6 text-white" />
+                                </div>
+                                <span className="text-2xl font-bold text-white">JobPortal</span>
                             </div>
-                            <span className="text-xl font-bold text-white">JobPortal</span>
+                            <p className="text-gray-400 text-sm leading-relaxed mb-4">
+                                Connect talented professionals with amazing opportunities. Your career journey starts here.
+                            </p>
+                            <div className="flex gap-3">
+                                <a
+                                    href="https://twitter.com"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-2 bg-gray-800 hover:bg-blue-600 rounded-lg transition-colors duration-200">
+                                    <Twitter className="w-5 h-5" />
+                                </a>
+                                <a
+                                    href="https://linkedin.com"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-2 bg-gray-800 hover:bg-blue-600 rounded-lg transition-colors duration-200">
+                                    <Linkedin className="w-5 h-5" />
+                                </a>
+                                <a
+                                    href="https://github.com"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-2 bg-gray-800 hover:bg-blue-600 rounded-lg transition-colors duration-200">
+                                    <Github className="w-5 h-5" />
+                                </a>
+                                <a
+                                    href="mailto:contact@jobportal.com"
+                                    className="p-2 bg-gray-800 hover:bg-blue-600 rounded-lg transition-colors duration-200">
+                                    <Mail className="w-5 h-5" />
+                                </a>
+                            </div>
                         </div>
-                        <div className="text-center md:text-right">
-                            <p className="text-sm">© 2026 JobPortal. All rights reserved.</p>
-                            <p className="text-sm mt-1">Made with ❤️ for job seekers and recruiters</p>
+
+                        {/* For Job Seekers */}
+                        <div>
+                            <h3 className="text-white font-semibold mb-4">For Job Seekers</h3>
+                            <ul className="space-y-3">
+                                <li>
+                                    <Link to="/jobs" className="text-gray-400 hover:text-white transition-colors text-sm">
+                                        Browse Jobs
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link to="/signup" className="text-gray-400 hover:text-white transition-colors text-sm">
+                                        Create Profile
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link to="/login" className="text-gray-400 hover:text-white transition-colors text-sm">
+                                        Job Seeker Login
+                                    </Link>
+                                </li>
+                            </ul>
+                        </div>
+
+                        {/* For Employers */}
+                        <div>
+                            <h3 className="text-white font-semibold mb-4">For Employers</h3>
+                            <ul className="space-y-3">
+                                <li>
+                                    <Link to="/signup" className="text-gray-400 hover:text-white transition-colors text-sm">
+                                        Post a Job
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link to="/login" className="text-gray-400 hover:text-white transition-colors text-sm">
+                                        Recruiter Login
+                                    </Link>
+                                </li>
+                            </ul>
+                        </div>
+
+                        {/* Company */}
+                        <div>
+                            <h3 className="text-white font-semibold mb-4">Company</h3>
+                            <ul className="space-y-3">
+                                <li>
+                                    <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">
+                                        About Us
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">
+                                        Contact
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">
+                                        Privacy Policy
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">
+                                        Terms of Service
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    {/* Bottom Bar */}
+                    <div className="pt-8 border-t border-gray-800">
+                        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                            <p className="text-sm text-gray-400">
+                                © 2026 JobPortal. All rights reserved.
+                            </p>
+                            <p className="text-sm text-gray-400">
+                                Made with <span className="text-red-500">❤️</span> for job seekers and recruiters
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -99,3 +161,5 @@ const LandingPage = () => {
 };
 
 export default LandingPage;
+
+

@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link, useLocation } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { Menu, X, User as UserIcon, LogOut, ChevronDown, Plus, Building2, Bookmark } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
 const Navbar = () => {
     const location = useLocation();
+    const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
     const [showDropdown, setShowDropdown] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -19,7 +20,10 @@ const Navbar = () => {
 
     const handleLogout = async () => {
         await logout();
-        window.location.href = '/';
+        // Small delay to ensure cookie is cleared
+        setTimeout(() => {
+            navigate('/', { replace: true });
+        }, 100);
     };
 
     // Close dropdown when clicking outside
@@ -205,8 +209,8 @@ const Navbar = () => {
                                         <Link
                                             to="/jobs"
                                             className={`block px-3 py-2 text-sm rounded transition ${isActive('/jobs')
-                                                    ? 'bg-gray-900 text-white font-medium'
-                                                    : 'text-gray-700 hover:bg-gray-50'
+                                                ? 'bg-gray-900 text-white font-medium'
+                                                : 'text-gray-700 hover:bg-gray-50'
                                                 }`}
                                         >
                                             Browse Jobs
@@ -214,8 +218,8 @@ const Navbar = () => {
                                         <Link
                                             to="/job-seeker-dashboard"
                                             className={`block px-3 py-2 text-sm rounded transition ${isActive('/job-seeker-dashboard')
-                                                    ? 'bg-gray-900 text-white font-medium'
-                                                    : 'text-gray-700 hover:bg-gray-50'
+                                                ? 'bg-gray-900 text-white font-medium'
+                                                : 'text-gray-700 hover:bg-gray-50'
                                                 }`}
                                         >
                                             My Applications
@@ -232,8 +236,8 @@ const Navbar = () => {
                                         <Link
                                             to="/recruiter-dashboard"
                                             className={`block px-3 py-2 text-sm rounded transition ${isActive('/recruiter-dashboard')
-                                                    ? 'bg-gray-900 text-white font-medium'
-                                                    : 'text-gray-700 hover:bg-gray-50'
+                                                ? 'bg-gray-900 text-white font-medium'
+                                                : 'text-gray-700 hover:bg-gray-50'
                                                 }`}
                                         >
                                             My Jobs
