@@ -1,12 +1,13 @@
 import { useMutation } from '@tanstack/react-query';
 import { useToast } from '../useToast';
+import { API_BASE_URL } from '../../utils/config';
 
 export const useUpdateCompanyProfile = () => {
     const { showToast } = useToast();
 
     return useMutation({
         mutationFn: async (data: FormData) => {
-            const response = await fetch('http://localhost:8000/api/v1/user/update-company-profile', {
+            const response = await fetch(`${API_BASE_URL}/user/update-company-profile`, {
                 method: 'PUT',
                 credentials: 'include',
                 body: data,

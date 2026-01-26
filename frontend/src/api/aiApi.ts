@@ -1,4 +1,6 @@
-const API_BASE = 'http://localhost:8000/api/v1/ai';
+import { API_BASE_URL } from '../utils/config';
+
+const API_BASE = `${API_BASE_URL}/ai`;
 
 interface GenerateJobDescriptionRequest {
     jobTitle: string;

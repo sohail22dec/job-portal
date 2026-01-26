@@ -1,4 +1,6 @@
-const API_BASE = 'http://localhost:8000/api/v1/job';
+import { API_BASE_URL } from '../utils/config';
+
+const API_BASE = `${API_BASE_URL}/job`;
 
 // Helper to handle API responses
 const handleResponse = async (response: Response) => {

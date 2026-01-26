@@ -1,4 +1,6 @@
-const API_BASE = 'http://localhost:8000/api/v1/application';
+import { API_BASE_URL } from '../utils/config';
+
+const API_BASE = `${API_BASE_URL}/application`;
 
 const handleResponse = async (response: Response) => {
     const data = await response.json();
