@@ -1,4 +1,5 @@
 import { createContext, useState, useEffect, type ReactNode } from 'react';
+import { API_BASE_URL } from '../src/utils/config';
 
 // Types
 type User = {
@@ -31,8 +32,10 @@ export const AuthContextProvider = ({ children }: AuthContextProviderProps) => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
+
+
     // Base URL for API
-    const API_URL = 'http://localhost:8000/api/v1/user';
+    const API_URL = `${API_BASE_URL}/user`;
 
     // Fetch current user (on mount and after login/signup)
     const fetchUser = async () => {
