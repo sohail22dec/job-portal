@@ -76,7 +76,8 @@ export const register = asyncHandler(async (req, res) => {
         .cookie("token", token, {
             maxAge: 1 * 24 * 60 * 60 * 1000, // 1 day
             httpOnly: true,
-            sameSite: 'strict'
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+            secure: process.env.NODE_ENV === 'production'
         })
         .json({
             message: "Account created successfully",
@@ -123,7 +124,8 @@ export const login = asyncHandler(async (req, res) => {
         .cookie("token", token, {
             maxAge: 1 * 24 * 60 * 60 * 1000, // 1 day
             httpOnly: true,
-            sameSite: 'strict'
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+            secure: process.env.NODE_ENV === 'production'
         })
         .json({
             user: userData,
@@ -137,7 +139,8 @@ export const logout = asyncHandler(async (req, res) => {
         .cookie("token", "", {
             maxAge: 0,
             httpOnly: true,
-            sameSite: 'strict'
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+            secure: process.env.NODE_ENV === 'production'
         })
         .json({
             message: "Logged out successfully.",
