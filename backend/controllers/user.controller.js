@@ -144,7 +144,7 @@ export const logout = asyncHandler(async (req, res) => {
         })
         .json({
             message: "Logged out successfully.",
-            success: true
+            success: true``
         });
 });
 

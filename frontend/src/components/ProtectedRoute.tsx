@@ -3,7 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 
 type ProtectedRouteProps = {
     children: React.ReactNode;
-    requiredRole?: 'jobseeker' | 'recruiter';
+    requiredRole?: 'job_seeker' | 'recruiter';
 };
 
 const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {

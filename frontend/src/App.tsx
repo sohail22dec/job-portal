@@ -62,7 +62,7 @@ const appRouter = createBrowserRouter([
       {
         path: "/job-seeker-dashboard",
         element: (
-          <ProtectedRoute requiredRole="jobseeker">
+          <ProtectedRoute requiredRole="job_seeker">
             <JobSeekerDashboard />
           </ProtectedRoute>
         ),
@@ -78,7 +78,7 @@ const appRouter = createBrowserRouter([
       {
         path: "/job/:jobId/apply",
         element: (
-          <ProtectedRoute requiredRole="jobseeker">
+          <ProtectedRoute requiredRole="job_seeker">
             <ApplyJob />
           </ProtectedRoute>
         ),
@@ -110,7 +110,7 @@ const appRouter = createBrowserRouter([
       {
         path: "/saved-jobs",
         element: (
-          <ProtectedRoute requiredRole="jobseeker">
+          <ProtectedRoute requiredRole="job_seeker">
             <SavedJobs />
           </ProtectedRoute>
         ),
@@ -118,7 +118,7 @@ const appRouter = createBrowserRouter([
       {
         path: "/profile",
         element: (
-          <ProtectedRoute requiredRole="jobseeker">
+          <ProtectedRoute requiredRole="job_seeker">
             <ProfilePage />
           </ProtectedRoute>
         ),
