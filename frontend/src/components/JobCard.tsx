@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router';
 import { MapPin, IndianRupee, Building2, Users, Edit, Trash2, Clock } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { formatSalary } from '../utils/format';
 
 type Job = {
     _id: string;
@@ -55,6 +56,7 @@ const JobCard = ({ job, variant = 'seeker', onEdit, onDelete }: JobCardProps) =>
                             <img
                                 src={isRecruiterView ? user?.profile?.company?.logo : job.createdBy?.profile?.company?.logo}
                                 alt={(isRecruiterView ? user?.profile?.company?.name : job.createdBy?.profile?.company?.name) || 'Company'}
+                                loading="lazy"
                                 className="w-12 h-12 rounded-lg object-cover border border-gray-200"
                             />
                         ) : (
@@ -115,7 +117,7 @@ const JobCard = ({ job, variant = 'seeker', onEdit, onDelete }: JobCardProps) =>
                 </div>
                 <div className="flex items-center">
                     <IndianRupee className="w-3.5 h-3.5" />
-                    <span>{job.salary.toLocaleString()}/year</span>
+                    <span>{formatSalary(job.salary)}</span>
                 </div>
                 <div className="flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5" />

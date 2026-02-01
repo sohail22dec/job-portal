@@ -1,4 +1,5 @@
 import { createContext, useState, useEffect, type ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { API_BASE_URL } from '../src/utils/config';
 
 // Types
@@ -31,6 +32,7 @@ type AuthContextProviderProps = {
 export const AuthContextProvider = ({ children }: AuthContextProviderProps) => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
+    const queryClient = useQueryClient();
 
 
 
@@ -74,6 +76,9 @@ export const AuthContextProvider = ({ children }: AuthContextProviderProps) => {
                 return { success: false, error: result.message || 'Login failed' };
             }
             setUser(result.user);
+
+            // Clear all cached queries when logging in to prevent stale data
+            queryClient.clear();
 
             return { success: true };
         } catch (error) {
@@ -137,10 +142,16 @@ export const AuthContextProvider = ({ children }: AuthContextProviderProps) => {
 
             // Clear user state
             setUser(null);
+
+            // Clear all cached queries to prevent stale data on next login
+            queryClient.clear();
         } catch (error) {
             console.error('Logout failed:', error);
             // Still clear user state even if API call fails
             setUser(null);
+
+            // Clear all cached queries even if logout API fails
+            queryClient.clear();
         }
     };
 

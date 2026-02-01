@@ -1,5 +1,6 @@
 import { Link } from 'react-router';
-import { MapPin, IndianRupee, Clock, Briefcase, ArrowRight, Building2 } from 'lucide-react';
+import { MapPin, IndianRupee, Clock, ArrowRight, Building2, Briefcase } from 'lucide-react';
+import { formatSalary } from '../../utils/format';
 import { useQuery } from '@tanstack/react-query';
 import { jobQueries } from '../../api/queries/jobQueries';
 
@@ -145,8 +146,8 @@ const FeaturedJobsSection = () => {
                                     <span className="line-clamp-1">{job.location}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-gray-500 text-sm">
-                                    <IndianRupee className="w-4 h-4 flex-shrink-0" />
-                                    <span>₹{job.salary.toLocaleString()}/year</span>
+                                    <IndianRupee className="w-4 h-4" />
+                                    <span>{formatSalary(job.salary)}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-gray-500 text-sm">
                                     <Clock className="w-4 h-4 flex-shrink-0" />

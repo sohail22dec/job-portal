@@ -22,13 +22,14 @@ export const jobApi = {
         return handleResponse(response);
     },
 
-    // Get all jobs (public)
-    getAllJobs: async (keyword = '') => {
-        const url = keyword
-            ? `${API_BASE}/all?keyword=${encodeURIComponent(keyword)}`
-            : `${API_BASE}/all`;
+    // Get all jobs (public) with pagination
+    getAllJobs: async (keyword = '', page: number, limit: number) => {
+        const params = new URLSearchParams();
+        if (keyword) params.append('keyword', keyword);
+        params.append('page', page.toString());
+        params.append('limit', limit.toString());
 
-        const response = await fetch(url, {
+        const response = await fetch(`${API_BASE}/all?${params.toString()}`, {
             credentials: 'include'
         });
         return handleResponse(response);

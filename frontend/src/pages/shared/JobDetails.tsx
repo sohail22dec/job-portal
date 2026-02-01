@@ -7,6 +7,7 @@ import { savedJobQueries } from '../../api/queries/savedJobQueries';
 import { useToggleSaveJob } from '../../hooks/mutations/useSavedJobsMutations';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
+import { formatSalary } from '../../utils/format';
 
 
 const JobDetails = () => {
@@ -144,7 +145,7 @@ const JobDetails = () => {
                                 <IndianRupee className="w-4 h-4" />
                                 Salary
                             </div>
-                            <div className="font-medium text-gray-900">₹{job.salary.toLocaleString()}/year</div>
+                            <div className="font-medium text-gray-900">{formatSalary(job.salary)}</div>
                         </div>
                         <div>
                             <div className="flex items-center gap-2 text-gray-500 text-sm mb-1">

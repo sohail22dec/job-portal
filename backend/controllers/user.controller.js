@@ -59,7 +59,7 @@ export const register = asyncHandler(async (req, res) => {
     const newUser = await User.create(userData);
 
     // Generate JWT token with 1-day expiration
-    const token = jwt.sign({ userId: newUser._id }, process.env.SECRET_KEY, { expiresIn: '1d' });
+    const token = jwt.sign({ userId: newUser._id }, process.env.SECRET_KEY, { expiresIn: '15d' });
 
     // Return user data without password
     const user = {
@@ -107,7 +107,7 @@ export const login = asyncHandler(async (req, res) => {
     }
 
     // Generate JWT token with 1-day expiration
-    const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, { expiresIn: '1d' });
+    const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, { expiresIn: '15d' });
 
     // Prepare user data (exclude password)
     const userData = {

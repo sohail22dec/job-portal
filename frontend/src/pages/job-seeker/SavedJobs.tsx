@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { savedJobQueries } from '../../api/queries/savedJobQueries';
 import { useToggleSaveJob } from '../../hooks/mutations/useSavedJobsMutations';
 import { useToast } from '../../hooks/useToast';
+import { formatSalary } from '../../utils/format';
 
 
 const SavedJobs = () => {
@@ -111,7 +112,7 @@ const SavedJobs = () => {
                                 <div className="space-y-2 mb-4">
                                     <div className="flex items-center gap-2 text-sm text-gray-700">
                                         <IndianRupee className="w-4 h-4" />
-                                        ₹{job.salary.toLocaleString()}/year
+                                        {formatSalary(job.salary)}
                                     </div>
                                     <div className="flex items-center gap-2 text-sm text-gray-700">
                                         <MapPin className="w-4 h-4" />

@@ -13,7 +13,8 @@ export const jobSchema = z.object({
         .max(2000, 'Description must be less than 2000 characters'),
 
     salary: z.number()
-        .min(1, 'Salary must be positive'),
+        .min(0.1, 'Salary must be at least 0.1 LPA')
+        .max(500, 'Salary cannot exceed 500 LPA'),
 
     location: z.string()
         .min(2, 'Location is required'),

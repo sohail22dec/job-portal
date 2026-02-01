@@ -29,9 +29,12 @@ export const postJob = asyncHandler(async (req, res) => {
     });
 });
 
-// GET /api/v1/job/all - Get all jobs
+// GET /api/v1/job/all - Get all jobs with pagination
 export const getAllJobs = asyncHandler(async (req, res) => {
     const keyword = req.query.keyword || "";
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
 
     const query = {
         $or: [
@@ -40,12 +43,22 @@ export const getAllJobs = asyncHandler(async (req, res) => {
         ]
     };
 
+    // Get total count for pagination metadata
+    const totalJobs = await Job.countDocuments(query);
+
+    // Get paginated jobs
     const jobs = await Job.find(query)
         .populate({
             path: 'createdBy',
             select: 'fullname profile.company'
         })
-        .sort({ createdAt: -1 });
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalJobs / limit);
+    const hasMore = page < totalPages;
 
     if (!jobs || jobs.length === 0) {
         return res.status(404).json({
@@ -56,7 +69,14 @@ export const getAllJobs = asyncHandler(async (req, res) => {
 
     res.status(200).json({
         success: true,
-        jobs
+        jobs,
+        pagination: {
+            currentPage: page,
+            totalPages,
+            totalJobs,
+            hasMore,
+            limit
+        }
     });
 });
 

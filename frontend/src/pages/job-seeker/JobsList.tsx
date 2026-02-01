@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Loader2, Search, X, Briefcase } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { jobQueries } from '../../api/queries/jobQueries';
 import JobCard from '../../components/JobCard';
 import JobFilters from '../../components/job-seeker/JobFilters';
@@ -14,11 +14,23 @@ const Jobs = () => {
         jobType: 'All'
     });
 
-    const { data: jobs = [], isLoading: loading } = useQuery(jobQueries.list(activeSearch));
+    const {
+        data,
+        isLoading: loading,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage
+    } = useInfiniteQuery(jobQueries.infiniteList(activeSearch));
+
+    // Flatten all pages into a single jobs array
+    const allJobs = useMemo(() => {
+        return data?.pages.flatMap(page => page.jobs) || [];
+    }, [data]);
+
 
     // Apply filters to jobs
     const filteredJobs = useMemo(() => {
-        return jobs.filter((job: any) => {
+        return allJobs.filter((job: any) => {
             // Location filter
             if (filters.location !== 'All') {
                 if (!job.location.toLowerCase().includes(filters.location.toLowerCase())) {
@@ -40,7 +52,7 @@ const Jobs = () => {
 
             return true;
         });
-    }, [jobs, filters]);
+    }, [allJobs, filters]);
 
     const handleSearch = () => {
         setActiveSearch(searchQuery);
@@ -141,15 +153,43 @@ const Jobs = () => {
                         )}
                     </div>
                 ) : (
-                    <div className="space-y-3">
-                        {filteredJobs.map((job: any) => (
-                            <JobCard
-                                key={job._id}
-                                job={job}
-                                variant="seeker"
-                            />
-                        ))}
-                    </div>
+                    <>
+                        <div className="space-y-3">
+                            {filteredJobs.map((job: any) => (
+                                <JobCard
+                                    key={job._id}
+                                    job={job}
+                                    variant="seeker"
+                                />
+                            ))}
+                        </div>
+
+                        {/* Load More Button */}
+                        {hasNextPage && (
+                            <div className="mt-6 text-center">
+                                <button
+                                    onClick={() => fetchNextPage()}
+                                    disabled={isFetchingNextPage}
+                                    className="px-6 py-3 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
+                                >
+                                    {isFetchingNextPage ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            Loading more jobs...
+                                        </>
+                                    ) : (
+                                        <>Load More Jobs</>
+                                    )}
+                                </button>
+                            </div>
+                        )}
+
+                        {!hasNextPage && allJobs.length > 0 && (
+                            <p className="text-center text-sm text-gray-500 mt-6">
+                                You've reached the end of the list
+                            </p>
+                        )}
+                    </>
                 )}
             </div>
         </div>
